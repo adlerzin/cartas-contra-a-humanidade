@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartas Contra a Humanidade</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div id="status-message" class="status">Conectando...</div>
+            <div id="countdown" class="countdown" style="visibility: hidden;"></div>
+            <div class="scores-area">
+                <h2>Pontuação</h2>
+                <ul id="scores-list">
+                    </ul>
+            </div>
+        </div>
+
+        <div class="card-area">
+            <div id="black-card" class="card black">
+                <div class="card-content">
+                    <p id="black-card-text"></p>
+                </div>
+            </div>
+
+            <div id="white-cards-container" class="white-cards-container">
+                </div>
+        </div>
+
+        <div class="button-area">
+            <button id="submit-button" class="game-button" disabled>Enviar carta</button>
+            <button id="vote-button" class="game-button" disabled>Votar</button>
+        </div>
+
+        <div id="game-over-message" class="game-over-message"></div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
