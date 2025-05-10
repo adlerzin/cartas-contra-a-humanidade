@@ -2,5 +2,5 @@
   "build": {
     "builder": "nixpacks"
   },
-  "startCommand": "python backend/app.py"
+  "startCommand": "python backend/rooms.py.py"
 }
