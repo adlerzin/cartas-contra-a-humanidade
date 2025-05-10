@@ -45,7 +45,7 @@ async def handler(websocket):
 
 # Iniciar o servidor na porta 4000
 async def main():
-    async with websockets.serve(handler, "localhost", 4000):
+    async with websockets.serve(handler, "0.0.0.0", 4000):
         print("Servidor WebSocket iniciado em ws://localhost:4000")
         await asyncio.Future()  # mantém o servidor rodando
 
