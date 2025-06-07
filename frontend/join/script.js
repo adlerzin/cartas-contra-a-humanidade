@@ -44,7 +44,7 @@ function criarSala() {
     let sala = getRandomInt(1000,34600)
     let nome = nameEntry.value;
 
-    const socket = new WebSocket('ws://localhost:4000');
+    const socket = new WebSocket('ws://127.0.0.1:4000');
 
     socket.onopen = function() {
         const msg = {

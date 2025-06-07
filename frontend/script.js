@@ -9,7 +9,7 @@ const sala = params.get("sala");
 console.log(nome); // "adler"
 console.log(sala); // "8000"
 
-const WS_URL = `ws://192.168.11.4:` + sala; // Replace with server IP if not local
+const WS_URL = `ws://127.0.0.1:` + sala; // Replace with server IP if not local
 
 
 // --- DOM Elements ---

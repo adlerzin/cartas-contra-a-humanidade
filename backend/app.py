@@ -108,6 +108,7 @@ async def run_countdown_timer():
         # Timer terminou (sem ser cancelado)
         if get_player_count() >= min_players:
             await start_game()
+            
         else:
             # Esta parte só seria atingida se o get_player_count() mudasse exatamente após o loop
             # O raise CancelledError acima lida melhor com a queda de jogadores
@@ -161,8 +162,7 @@ async def start_new_round():
              if len(white_cards) >= HAND_SIZE:
                  new_hand = random.sample(white_cards, HAND_SIZE)
                  players[player_ws]["hand"] = new_hand
-                 
-                 
+                 await send_to_client(player_ws, {"action": "nova_mao", "cartas": players[player_ws]["hand"]})
                  print(f"Enviando nova mão para {player_ws.remote_address}: {new_hand}") # Debugging
                  
 
@@ -277,7 +277,7 @@ async def handler(websocket):
     # Enviar pontuações atuais para o novo cliente (SEMPRE)
     scores_data = {str(ws.remote_address): data["score"] for ws, data in players.items()}
     await send_to_client(websocket, {"action": "scores_update", "scores": scores_data})
-    await send_to_client({"action": "codigo_sala", "sala": sys.argv[1]})
+    await send_to_client(websocket, {"action": "codigo_sala", "sala": sys.argv[1]})
 
     # Envia info específica do estado atual
     if game_state == "starting_countdown":
@@ -338,7 +338,7 @@ async def handler(websocket):
                         print(f"Carta branca recebida. Carta: {card_text} Player: {players[websocket]}")
 
                         # >>> AJUSTADO: Remover a carta da mão do jogador após submeter <<<
-                        players[websocket]["hand"].remove(card_text)
+                        
                         print(f"Card submitted by {websocket.remote_address}. Removed from hand. Total submitted: {len(submitted_white_cards)}") # Debugging
 
 
