@@ -53,7 +53,9 @@ function connectWebSocket() {
         console.log('WebSocket connected');
         // Server should send initial state upon connection
         // No need to send anything immediately unless server requires it
-        sendMessage({ action: 'nome', nome: nome })
+        jogadorNome = nome
+        setTimeout(sendMessage({action: 'nome', nome: jogadorNome}), 1000)
+        
     };
 
     websocket.onmessage = (event) => {
@@ -198,6 +200,9 @@ function handleMessage(message) {
         
         case 'nova_mao':
             myWhiteCards = message.cartas
+        
+        case 'get_nome':
+            sendMessage({action: 'nome', nome: jogadorNome})
 
         default:
             console.warn(`Unknown action received: ${action}`, message);
@@ -325,6 +330,7 @@ function updateUI() {
             whiteCardsContainer.style.display = 'none';
             // Scores list is already visible
             break;
+        
 
         default:
             // Fallback or error state display

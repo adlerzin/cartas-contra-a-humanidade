@@ -156,7 +156,8 @@ async def start_new_round():
         if player_ws in players: # Verifica novamente se o player ainda existe (edge case)
              players[player_ws]["submitted_this_round"] = False
              players[player_ws]["voted_this_round"] = False
-
+             
+             await send_to_client(player_ws, {"action": "get_nome"})
              # >>> CORRIGIDO/AJUSTADO: Distribuir nova mão para CADA jogador <<<
              # Garante que há cartas brancas suficientes para dar uma mão completa
              if len(white_cards) >= HAND_SIZE:
@@ -214,7 +215,10 @@ async def end_game(winner_ws=None):
               final_winner_score = "N/A"
 
     # Broadcast final de scores ANTES do game over principal, para garantir que o frontend os receba
-    scores_data = {str(ws.remote_address): data["score"] for ws, data in players.items()}
+    scores_data = {
+        players[ws]["nome"]: data["score"]
+        for ws, data in players.items()
+    }  
     await broadcast({"action": "scores_update", "scores": scores_data})
 
     # Broadcast da mensagem de game over
@@ -275,7 +279,10 @@ async def handler(websocket):
     await send_to_client(websocket, {"action": "game_state_update", "state": game_state, "message": f"Current state: {game_state}"})
     await send_to_client(websocket, {"action": "nova_mao", "cartas": players[websocket]["hand"]})
     # Enviar pontuações atuais para o novo cliente (SEMPRE)
-    scores_data = {str(ws.remote_address): data["score"] for ws, data in players.items()}
+    scores_data = {
+        players[ws]["nome"]: data["score"]
+        for ws, data in players.items()
+    }   
     await send_to_client(websocket, {"action": "scores_update", "scores": scores_data})
     await send_to_client(websocket, {"action": "codigo_sala", "sala": sys.argv[1]})
 
@@ -357,6 +364,11 @@ async def handler(websocket):
                              await broadcast({"action": "start_vote", "cards": cards_to_vote})
                              # O estado do jogo MUDARÁ para voting NO FRONTEND ao receber start_vote.
 
+                elif action == "nome":
+                    nome = data.get("nome")
+                    print(f"Nome do {players[websocket]} é {nome}")
+                    if nome:
+                        players[websocket]["nome"] = nome
 
                 elif action == "vote" and game_state == "in_game":
                     chosen_card = data.get("card")
@@ -401,14 +413,17 @@ async def handler(websocket):
                                          "action": "round_result",
                                          "winner_card": winner_card,
                                          # Envia o endereço do vencedor (ou uma representação string)
-                                         "winner_address": str(winner_player_ws.remote_address),
+                                         "winner_address": players[winner_player_ws]['nome'],
                                          # O score enviado aqui é o score ATUALIZADO do vencedor da rodada
                                          # Isso pode ser confuso para o frontend. Melhor enviar score_update separado.
                                          # "score": winner_score
                                      })
 
                                      # Broadcasta a pontuação ATUALIZADA de TODOS os jogadores APÓS o resultado da rodada
-                                     scores_data = {str(ws.remote_address): data["score"] for ws, data in players.items()}
+                                     scores_data = {
+                                        players[ws]["nome"]: data["score"]
+                                        for ws, data in players.items()
+                                    }                                
                                      await broadcast({"action": "scores_update", "scores": scores_data})
 
                                      # Verifica se o vencedor atingiu a pontuação máxima
@@ -426,7 +441,10 @@ async def handler(websocket):
                                      # Broadcasta o resultado da rodada com informação de jogador desconectado
                                      await broadcast({"action": "round_result", "winner_card": winner_card, "winner_address": "Disconnected Player", "score": "N/A"})
                                      # Broadcasta as pontuações atuais (sem o vencedor desconectado, pois ele já foi removido de 'players' no finally anterior)
-                                     scores_data = {str(ws.remote_address): data["score"] for ws, data in players.items()}
+                                     scores_data = {
+                                        players[ws]["nome"]: data["score"]
+                                        for ws, data in players.items()
+                                    }                                    
                                      await broadcast({"action": "scores_update", "scores": scores_data})
                                      await asyncio.sleep(3)
                                      await start_new_round()
@@ -434,7 +452,10 @@ async def handler(websocket):
                             else: # Caso não tenha votos (improvável se sum(votes.values()) > 0, mas seguro)
                                  print("Vote check passed, but no votes recorded?") # Debugging
                                  await broadcast({"action": "round_result", "winner_card": "No votes recorded", "winner_address": "N/A", "score": "N/A"})
-                                 scores_data = {str(ws.remote_address): data["score"] for ws, data in players.items()}
+                                 scores_data = {
+                                    players[ws]["nome"]: data["score"]
+                                    for ws, data in players.items()
+                                }                                
                                  await broadcast({"action": "scores_update", "scores": scores_data})
                                  await asyncio.sleep(3)
                                  await start_new_round()
