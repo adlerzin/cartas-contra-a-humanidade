@@ -165,7 +165,7 @@ function updateProgressBar() {
 }
 
 function startAutoTimer() {
-  let timeLeft = 5
+  let timeLeft = 500000
   const timerCountdownElement = document.getElementById("timer-countdown")
   const timerBar = document.getElementById("timer-bar")
 
@@ -681,5 +681,33 @@ playAgainButton.addEventListener("click", () => {
   window.location.reload()
 })
 
+function showEmojiEffect(event) {
+  const emoji = event.target.textContent;
+
+  const emojiEl = document.createElement('span');
+  emojiEl.className = 'floating-emoji';
+  emojiEl.textContent = emoji;
+
+  // Coordenadas relativas ao clique na tela
+  const rect = event.target.getBoundingClientRect();
+  const x = rect.left + rect.width / 2;
+  const y = rect.top + rect.height / 2;
+
+  // Adiciona pequenas variações para não ficar tudo igual
+  const offsetX = Math.random() * 40 - 20;
+  const offsetY = Math.random() * 20 - 10;
+
+  emojiEl.style.left = `${x + offsetX}px`;
+  emojiEl.style.top = `${y + offsetY}px`;
+
+  document.getElementById('emoji-layer').appendChild(emojiEl);
+
+  // Remove após a animação
+  setTimeout(() => {
+    emojiEl.remove();
+  }, 1600);
+}
+
 // --- Initialization ---
 connectWebSocket()
+

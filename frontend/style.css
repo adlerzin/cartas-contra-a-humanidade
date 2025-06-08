@@ -198,7 +198,60 @@
     70% { box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
     100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
   }
-  
+
+  .reactions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .reactions button {
+    font-size: 28px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    position: relative;
+    overflow: visible;
+  }
+
+  #emoji-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* para não interferir com os cliques */
+    overflow: hidden;
+  }
+
+  .floating-emoji {
+    position: absolute;
+    font-size: 24px;
+    opacity: 0;
+    animation: floatUp 1.6s ease-out forwards;
+    user-select: none;
+  }
+
+  @keyframes floatUp {
+    0% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(-60px) scale(1.2);
+      opacity: 0.9;
+    }
+    100% {
+      transform: translateY(-140px) scale(0.9);
+      opacity: 0;
+    }
+  }
+
+      
   .white-card.selected::after {
     content: "✓";
     position: absolute;
