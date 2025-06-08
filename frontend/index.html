@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cartas Contra a Humanidade</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="showcase-styles.css">
 </head>
 <body>
     <div class="game-container">
@@ -36,8 +37,43 @@
 
         <div id="game-over-message" class="game-over-message"></div>
 
+        <!-- Novo overlay para mostrar cartas em tela cheia -->
+        <div id="card-showcase-overlay" class="card-showcase-overlay">
+            <div class="showcase-content">
+                <!-- Carta preta no topo -->
+                <div id="showcase-black-card" class="showcase-black-card">
+                    <div class="card-content">
+                        <p id="showcase-black-card-text"></p>
+                    </div>
+                </div>
+                
+                <div class="showcase-header">
+                    <h2>Cartas Enviadas</h2>
+                    <div class="showcase-counter">
+                        <span id="current-card-number">1</span> / <span id="total-cards-number">0</span>
+                    </div>
+                </div>
+                
+                <div id="showcase-card" class="showcase-card">
+                    <div class="card-content">
+                        <p id="showcase-card-text"></p>
+                    </div>
+                </div>
+                
+                <!-- Remover os botões de controle -->
+                
+                <div class="showcase-progress">
+                    <div id="progress-bar" class="progress-bar"></div>
+                    <div id="timer-bar" class="timer-bar"></div>
+                </div>
+                
+                <div class="auto-message">
+                    <p>Próxima carta em <span id="timer-countdown">5</span> segundos...</p> 
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="./script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

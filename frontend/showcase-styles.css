@@ -1,0 +1,302 @@
+/* Estilos para o showcase de cartas em tela cheia */
+.card-showcase-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.98));
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: overlayFadeIn 0.5s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(10px);
+  }
+}
+
+.showcase-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 90%;
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+}
+
+/* Carta preta no showcase */
+.showcase-black-card {
+  background-color: #000;
+  color: #fff;
+  border: 3px solid #333;
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  max-width: 350px;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.showcase-black-card .card-content {
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.showcase-black-card::before {
+  content: "CARTAS CONTRA A HUMANIDADE";
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 7px;
+  letter-spacing: 1px;
+  opacity: 0.4;
+  font-weight: bold;
+}
+
+.showcase-header {
+  text-align: center;
+  margin-bottom: 25px;
+  color: white;
+}
+
+.showcase-header h2 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.showcase-counter {
+  font-size: 1.1rem;
+  opacity: 0.8;
+  font-weight: bold;
+}
+
+/* Carta branca mais vertical e menor */
+.showcase-card {
+  background-color: #fff;
+  color: #000;
+  border: 3px solid #333;
+  border-radius: 12px;
+  padding: 25px 20px;
+  min-height: 200px;
+  width: 100%;
+  max-width: 280px; /* Reduzido de 400px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
+  animation: cardSlideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+  aspect-ratio: 3 / 4; /* Proporção mais vertical */
+}
+
+.showcase-card:hover {
+  transform: translateY(-3px) rotateX(2deg);
+}
+
+@keyframes cardSlideIn {
+  from {
+    transform: translateY(80px) rotateX(-10deg);
+    opacity: 0;
+    scale: 0.9;
+  }
+  to {
+    transform: translateY(0) rotateX(0);
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+.showcase-card .card-content {
+  font-size: 1.2rem; /* Reduzido de 1.4rem */
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.showcase-card::before {
+  content: "CARTAS CONTRA A HUMANIDADE";
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 7px;
+  letter-spacing: 1px;
+  opacity: 0.4;
+  font-weight: bold;
+}
+
+/* Remover estilos dos botões de controle */
+.showcase-controls {
+  display: none;
+}
+
+.showcase-btn {
+  display: none;
+}
+
+/* Barra de progresso e timer */
+.showcase-progress {
+  width: 100%;
+  max-width: 350px;
+  margin-top: 25px;
+  position: relative;
+}
+
+.progress-bar {
+  height: 6px;
+  background: linear-gradient(90deg, #007bff, #00d4ff);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+  margin-bottom: 8px;
+}
+
+.timer-bar {
+  height: 4px;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  border-radius: 2px;
+  width: 100%;
+  transform-origin: left;
+  animation: timerCountdown 5s linear;
+}
+
+@keyframes timerCountdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Mensagem automática */
+.auto-message {
+  margin-top: 15px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+.auto-message p {
+  margin: 0;
+}
+
+#timer-countdown {
+  font-weight: bold;
+  color: #28a745;
+}
+
+/* Animações de transição entre cartas - mais suaves */
+.showcase-card.slide-out {
+  animation: slideOut 0.5s ease-in forwards;
+}
+
+.showcase-card.slide-in {
+  animation: slideIn 0.5s ease-out forwards;
+}
+
+@keyframes slideOut {
+  to {
+    transform: translateY(-50px) rotateX(-15deg);
+    opacity: 0;
+    scale: 0.9;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(50px) rotateX(15deg);
+    opacity: 0;
+    scale: 0.9;
+  }
+  to {
+    transform: translateY(0) rotateX(0);
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* Responsividade para o showcase */
+@media (max-width: 768px) {
+  .showcase-header h2 {
+    font-size: 1.8rem;
+  }
+
+  .showcase-black-card {
+    max-width: 300px;
+    min-height: 100px;
+    padding: 15px;
+  }
+
+  .showcase-black-card .card-content {
+    font-size: 1rem;
+  }
+
+  .showcase-card {
+    padding: 20px 15px;
+    min-height: 180px;
+    max-width: 240px;
+  }
+
+  .showcase-card .card-content {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .showcase-content {
+    padding: 15px;
+  }
+
+  .showcase-header h2 {
+    font-size: 1.6rem;
+  }
+
+  .showcase-black-card {
+    max-width: 280px;
+    min-height: 90px;
+    padding: 12px;
+  }
+
+  .showcase-black-card .card-content {
+    font-size: 0.9rem;
+  }
+
+  .showcase-card {
+    padding: 18px 12px;
+    min-height: 160px;
+    max-width: 220px;
+  }
+
+  .showcase-card .card-content {
+    font-size: 1rem;
+  }
+
+  .auto-message {
+    font-size: 0.8rem;
+  }
+}
