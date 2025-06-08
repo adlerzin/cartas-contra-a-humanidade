@@ -12,6 +12,9 @@
   align-items: center;
   justify-content: center;
   animation: overlayFadeIn 0.5s ease-out;
+  /* Add overflow for scrolling on small screens if content overflows */
+  overflow-y: auto; 
+  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes overlayFadeIn {
@@ -29,10 +32,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 90%;
-  width: 100%;
-  max-width: 500px;
-  padding: 20px;
+  /* Increased max-width for better PC display */
+  width: 95%; 
+  max-width: 700px; /* Adjusted from 500px */
+  padding: 20px; 
+  box-sizing: border-box; /* Ensure padding is included in the width */
 }
 
 /* Carta preta no showcase */
@@ -41,20 +45,21 @@
   color: #fff;
   border: 3px solid #333;
   border-radius: 12px;
-  padding: 20px;
+  padding: 20px; 
   width: 100%;
-  max-width: 350px;
-  min-height: 120px;
+  max-width: 500px; /* Adjusted from 350px */
+  min-height: 120px; 
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
   margin-bottom: 20px;
   position: relative;
+  box-sizing: border-box;
 }
 
 .showcase-black-card .card-content {
-  font-size: 1.1rem;
+  font-size: 1.1rem; 
   font-weight: bold;
   text-align: center;
   line-height: 1.3;
@@ -75,18 +80,18 @@
 
 .showcase-header {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 25px; 
   color: white;
 }
 
 .showcase-header h2 {
-  font-size: 2rem;
+  font-size: 2rem; 
   margin-bottom: 8px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .showcase-counter {
-  font-size: 1.1rem;
+  font-size: 1.1rem; 
   opacity: 0.8;
   font-weight: bold;
 }
@@ -97,10 +102,10 @@
   color: #000;
   border: 3px solid #333;
   border-radius: 12px;
-  padding: 25px 20px;
-  min-height: 200px;
-  width: 100%;
-  max-width: 280px; /* Reduzido de 400px */
+  padding: 25px 20px; 
+  min-height: 25px; /* Adjusted from 200px */
+  width: 35%;
+  max-width: 400px; /* Adjusted from 280px */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,6 +115,7 @@
   transform-style: preserve-3d;
   transition: transform 0.3s ease;
   aspect-ratio: 3 / 4; /* Proporção mais vertical */
+  box-sizing: border-box;
 }
 
 .showcase-card:hover {
@@ -130,7 +136,7 @@
 }
 
 .showcase-card .card-content {
-  font-size: 1.2rem; /* Reduzido de 1.4rem */
+  font-size: 1.2rem; 
   font-weight: bold;
   text-align: center;
   line-height: 1.3;
@@ -141,7 +147,7 @@
   position: absolute;
   bottom: 12px;
   left: 0;
-  width: 100%;
+  width: 50%;
   text-align: center;
   font-size: 7px;
   letter-spacing: 1px;
@@ -243,7 +249,7 @@
 /* Responsividade para o showcase */
 @media (max-width: 768px) {
   .showcase-header h2 {
-    font-size: 1.8rem;
+    font-size: 1.8rem; 
   }
 
   .showcase-black-card {
@@ -298,5 +304,43 @@
 
   .auto-message {
     font-size: 0.8rem;
+  }
+  
+  .reactions {
+    flex-wrap: wrap; /* Allow reactions to wrap on very small screens */
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .reactions button {
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* Fallback for extremely small screens or unusual aspect ratios */
+@media (max-height: 600px) and (max-width: 400px) {
+  .showcase-content {
+    padding: 5px;
+  }
+  .showcase-black-card, .showcase-card {
+    margin-bottom: 10px;
+    padding: 8px;
+    min-height: unset; /* Allow height to be content-driven */
+  }
+  .showcase-black-card .card-content, .showcase-card .card-content {
+    font-size: 0.8rem;
+  }
+  .showcase-header h2 {
+    font-size: 1.2rem;
+  }
+  .showcase-counter, .auto-message {
+    font-size: 0.7rem;
+  }
+  .reactions button {
+    width: 45px;
+    height: 45px;
+    font-size: 22px;
   }
 }
