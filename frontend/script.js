@@ -20,16 +20,23 @@ const submitButton = document.getElementById("submit-button")
 const voteButton = document.getElementById("vote-button")
 const gameOverMessageElement = document.getElementById("game-over-message")
 
-// Novos elementos para o showcase
+// Elementos do showcase
 const showcaseOverlay = document.getElementById("card-showcase-overlay")
 const showcaseCard = document.getElementById("showcase-card")
 const showcaseCardText = document.getElementById("showcase-card-text")
 const currentCardNumber = document.getElementById("current-card-number")
 const totalCardsNumber = document.getElementById("total-cards-number")
-const prevCardBtn = document.getElementById("prev-card-btn")
-const nextCardBtn = document.getElementById("next-card-btn")
-const startVotingBtn = document.getElementById("start-voting-btn")
 const progressBar = document.getElementById("progress-bar")
+
+// Elementos da tela de vitória
+const victoryScreen = document.getElementById("victory-screen")
+const winnerNameElement = document.getElementById("winner-name")
+const winnerScoreElement = document.getElementById("winner-score")
+const finalScoresList = document.getElementById("final-scores-list")
+const bestCardElement = document.getElementById("best-card")
+const bestCardText = document.getElementById("best-card-text")
+const playAgainButton = document.getElementById("play-again-button")
+const confettiContainer = document.getElementById("confetti-container")
 
 // --- Game State ---
 let gameState = "connecting"
@@ -48,8 +55,12 @@ let hasSubmittedThisRound = false
 let showcaseCards = []
 let currentShowcaseIndex = 0
 let isShowcaseActive = false
-const showcaseTimer = null
 let timerCountdown = null
+
+// Variáveis para a tela de vitória
+let gameWinner = ""
+let bestCard = ""
+let bestCardPlayer = ""
 
 // Declaring jogadorNome variable
 let jogadorNome
@@ -223,6 +234,118 @@ function endShowcase() {
   updateUI()
 }
 
+// --- Victory Screen Functions ---
+function showVictoryScreen(winner, scores) {
+  // Configurar elementos da tela de vitória
+  winnerNameElement.textContent = winner
+  
+  // Encontrar a pontuação do vencedor
+  const winnerScore = scores[winner] || 0
+  winnerScoreElement.textContent = `${winnerScore} pontos`
+  
+  // Preencher lista de pontuações final
+  updateFinalScoresList(scores, winner)
+  
+  // Definir a melhor carta (se disponível)
+  if (bestCard) {
+    bestCardText.textContent = bestCard
+  } else {
+    bestCardText.textContent = "Informação não disponível"
+  }
+  
+  // Mostrar a tela de vitória
+  victoryScreen.style.display = "flex"
+  
+  // Iniciar animação de confetti
+  createConfetti()
+}
+
+function updateFinalScoresList(scores, winner) {
+  finalScoresList.innerHTML = ""
+  
+  // Ordenar pontuações em ordem decrescente
+  const sortedScores = Object.entries(scores).sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+  
+  sortedScores.forEach(([player, score]) => {
+    const listItem = document.createElement("li")
+    const isWinner = player === winner
+    
+    if (isWinner) {
+      listItem.classList.add("winner")
+    }
+    
+    listItem.innerHTML = `
+      <span>${player}</span>
+      <span>${score} pontos</span>
+    `
+    
+    finalScoresList.appendChild(listItem)
+  })
+}
+
+function createConfetti() {
+  // Limpar confetti existente
+  confettiContainer.innerHTML = ""
+  
+  // Cores do confetti
+  const colors = ["#FFD700", "#FFA500", "#FF4500", "#FF6347", "#FF8C00", "#FFFF00", "#FFFFFF"]
+  
+  // Criar 100 pedaços de confetti
+  for (let i = 0; i < 100; i++) {
+    const confetti = document.createElement("div")
+    confetti.classList.add("confetti")
+    
+    // Posição aleatória
+    const left = Math.random() * 100
+    const top = -20 - Math.random() * 80 // Começar acima da tela
+    
+    // Tamanho aleatório
+    const size = Math.random() * 10 + 5
+    
+    // Cor aleatória
+    const color = colors[Math.floor(Math.random() * colors.length)]
+    
+    // Aplicar estilos
+    confetti.style.left = `${left}%`
+    confetti.style.top = `${top}px`
+    confetti.style.width = `${size}px`
+    confetti.style.height = `${size}px`
+    confetti.style.backgroundColor = color
+    
+    // Forma aleatória
+    const shapes = ["", "border-radius: 50%", "transform: rotate(45deg)"]
+    confetti.style.cssText += shapes[Math.floor(Math.random() * shapes.length)]
+    
+    // Animação
+    const duration = Math.random() * 3 + 2
+    const delay = Math.random() * 5
+    
+    confetti.style.animation = `confettiFall ${duration}s ease-in ${delay}s infinite`
+    
+    // Adicionar ao container
+    confettiContainer.appendChild(confetti)
+  }
+  
+  // Adicionar keyframes para a animação de queda
+  if (!document.getElementById("confetti-keyframes")) {
+    const style = document.createElement("style")
+    style.id = "confetti-keyframes"
+    style.innerHTML = `
+      @keyframes confettiFall {
+        0% {
+          transform: translateY(0) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(${window.innerHeight * 1.5}px) rotate(360deg);
+          opacity: 0;
+        }
+      }
+    `
+    document.head.appendChild(style)
+  }
+}
+
 // --- Message Handling ---
 function handleMessage(message) {
   const action = message.action
@@ -284,6 +407,13 @@ function handleMessage(message) {
     case "round_result":
       roundWinnerCard = message.winner_card
       roundWinnerAddress = message.winner_address
+      
+      // Armazenar a melhor carta para a tela de vitória
+      if (!bestCard || Math.random() > 0.5) { // Escolher aleatoriamente entre as cartas vencedoras
+        bestCard = roundWinnerCard
+        bestCardPlayer = roundWinnerAddress
+      }
+      
       gameState = "round_result"
       statusMessage.textContent = `Round Winner: '${roundWinnerCard}' by ${roundWinnerAddress}!`
       console.log(`Round Result: '${roundWinnerCard}' by ${roundWinnerAddress}`)
@@ -297,10 +427,15 @@ function handleMessage(message) {
 
     case "game_over":
       const winner = message.winner
+      gameWinner = winner
       gameState = "game_over"
       statusMessage.textContent = `GAME OVER! Winner: ${winner}`
       gameOverMessageElement.textContent = `GAME OVER! Winner: ${winner}`
       console.log(`Game Over! Winner: ${winner}`)
+      
+      // Mostrar tela de vitória
+      showVictoryScreen(winner, allScores)
+      
       updateUI()
       break
 
@@ -398,7 +533,8 @@ function updateUI() {
       break
 
     case "game_over":
-      gameOverMessageElement.style.display = "block"
+      // A tela de vitória é mostrada separadamente
+      // Esconder elementos do jogo
       blackCardElement.style.display = "none"
       whiteCardsContainer.style.display = "none"
       break
@@ -537,6 +673,12 @@ voteButton.addEventListener("click", () => {
     statusMessage.textContent = "Vote submitted. Waiting for results..."
     updateUI()
   }
+})
+
+// Botão "Jogar Novamente"
+playAgainButton.addEventListener("click", () => {
+  // Recarregar a página para reiniciar o jogo
+  window.location.reload()
 })
 
 // --- Initialization ---

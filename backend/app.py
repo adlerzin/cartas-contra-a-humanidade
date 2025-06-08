@@ -16,7 +16,7 @@ players = {}
 current_black_card = None
 submitted_white_cards = [] # [{"player": websocket, "card": card_text}]
 votes = {} # {card_text: count}
-max_points = 5
+max_points = 2
 min_players = 2 # Mínimo de jogadores para iniciar
 HAND_SIZE = 7 # Tamanho da mão de cartas brancas de cada jogador
 
@@ -207,7 +207,7 @@ async def end_game(winner_ws=None):
     # Encontrar o endereço e pontuação do vencedor (se houver um)
     if winner_ws and winner_ws in players:
          try:
-              winner_address = str(winner_ws.remote_address)
+              winner_address = str(players[winner_ws]['nome'])
               final_winner_score = players[winner_ws]["score"]
          except Exception as e:
               print(f"Erro ao obter endereço/score do vencedor: {e}")

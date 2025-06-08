@@ -6,6 +6,7 @@
     <title>Cartas Contra a Humanidade</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="showcase-styles.css">
+    <link rel="stylesheet" href="victory-style.css">
 </head>
 <body>
     <div class="game-container">
@@ -60,16 +61,50 @@
                     </div>
                 </div>
                 
-                <!-- Remover os botões de controle -->
-                
                 <div class="showcase-progress">
                     <div id="progress-bar" class="progress-bar"></div>
                     <div id="timer-bar" class="timer-bar"></div>
                 </div>
                 
                 <div class="auto-message">
-                    <p>Próxima carta em <span id="timer-countdown">5</span> segundos...</p> 
+                    <p>Próxima carta em <span id="timer-countdown">5</span> segundos...</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Nova tela de vitória -->
+        <div id="victory-screen" class="victory-screen">
+            <div class="victory-content">
+                <div class="confetti-container" id="confetti-container"></div>
+                
+                <div class="victory-header">
+                    <h1>FIM DE JOGO!</h1>
+                    <div class="trophy-icon">🏆</div>
+                </div>
+                
+                <div class="winner-spotlight">
+                    <div class="winner-crown">👑</div>
+                    <div class="winner-name" id="winner-name">Nome do Vencedor</div>
+                    <div class="winner-score" id="winner-score">10 pontos</div>
+                </div>
+                
+                <div class="final-scores-container">
+                    <h3>Pontuação Final</h3>
+                    <ul id="final-scores-list" class="final-scores-list">
+                        <!-- Scores serão inseridos aqui -->
+                    </ul>
+                </div>
+                
+                <div class="best-card-container">
+                    <h3>Melhor Carta</h3>
+                    <div id="best-card" class="best-card">
+                        <div class="card-content">
+                            <p id="best-card-text"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="play-again-button" class="play-again-button">Jogar Novamente</button>
             </div>
         </div>
     </div>
