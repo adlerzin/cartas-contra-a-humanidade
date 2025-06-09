@@ -78,7 +78,8 @@ function connectWebSocket() {
 
   websocket.onopen = () => {
     console.log("WebSocket connected")
-    jogadorNome = nome
+    if (nome) {jogadorNome = nome}
+    else {jogadorNome = "Adler"}
     setTimeout(() => sendMessage({ action: "nome", nome: jogadorNome }), 1000)
   }
 
