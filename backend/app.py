@@ -247,11 +247,10 @@ async def end_game(winner_ws=None):
     current_black_card = None
     # As flags submitted_this_round/voted_this_round serão resetadas ao iniciar uma nova rodada.
     # As mãos serão distribuídas na próxima start_new_round.
-
-    exit()
-
+    
     # Transiciona para o estado de espera após um breve delay para o cliente processar GAME_OVER
-    await asyncio.sleep(5) # Tempo para o cliente exibir "Game Over"
+    await asyncio.sleep(10) # Tempo para o cliente exibir "Game Over"
+    os.execv(sys.executable, [sys.executable] + sys.argv)
     # Verifica se ainda há jogadores suficientes para iniciar um novo countdown imediatamente
     if get_player_count() >= min_players:
          print("Jogadores suficientes ainda conectados. Iniciando novo countdown para novo jogo.")

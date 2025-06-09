@@ -71,7 +71,7 @@ let websocket
 function connectWebSocket() {
   gameState = "connecting"
   updateUI()
-  statusMessage.textContent = "Connecting..."
+  statusMessage.textContent = "Conectando..."
   countdownDisplay.style.display = "none"
 
   websocket = new WebSocket(WS_URL)
@@ -91,14 +91,14 @@ function connectWebSocket() {
   websocket.onerror = (error) => {
     console.error("WebSocket error:", error)
     gameState = "error"
-    statusMessage.textContent = `Connection Error: ${error.message || "Unknown Error"}`
+    statusMessage.textContent = `Erro de conexão: ${error.message || "Erro desconhecido!"}`
     updateUI()
   }
 
   websocket.onclose = (event) => {
     console.log("WebSocket closed:", event)
     gameState = "error"
-    statusMessage.textContent = `Connection Closed: ${event.code} - ${event.reason || "Unknown Reason"}`
+    statusMessage.textContent = `Conexão fechada: ${event.code} - ${event.reason || "Razão desconhecida!"}`
     updateUI()
     window.location.href = window.location.href
   }
@@ -109,7 +109,7 @@ function sendMessage(message) {
     websocket.send(JSON.stringify(message))
   } else {
     console.error("WebSocket is not open. Cannot send message:", message)
-    statusMessage.textContent = "Error: Not connected to server."
+    statusMessage.textContent = "Erro: Não conectado ao servidor."
     gameState = "error"
     updateUI()
   }
@@ -230,7 +230,7 @@ function endShowcase() {
 
   // Iniciar votação normal
   gameState = "voting"
-  statusMessage.textContent = "Vote for the best white card."
+  statusMessage.textContent = "Vote na carta mais engraçada!"
   updateUI()
 }
 
@@ -353,7 +353,6 @@ function handleMessage(message) {
   switch (action) {
     case "game_state_update":
       gameState = message.state
-      statusMessage.textContent = message.message
       console.log(`Game state changed to: ${gameState}`)
       updateUI()
       break
@@ -361,7 +360,7 @@ function handleMessage(message) {
     case "countdown":
       countdownDisplay.textContent = message.seconds
       countdownDisplay.style.display = "block"
-      statusMessage.textContent = `Game starting in ${message.seconds} seconds...`
+      statusMessage.textContent = `Jogo iniciando em ${message.seconds} segundos...`
       break
 
     case "next_round":
@@ -373,14 +372,14 @@ function handleMessage(message) {
       hasSubmittedThisRound = false
 
       sendMessage({ action: "get_black_card" })
-      statusMessage.textContent = "Waiting for the Black Card..."
+      statusMessage.textContent = "Aguardando a carta preta..."
       updateUI()
       break
 
     case "black_card":
       currentBlackCardText = message.card
       gameState = "choosing_white_card"
-      statusMessage.textContent = "Choose a white card."
+      statusMessage.textContent = "Escolha uma carta preta."
       updateUI()
       break
 
@@ -394,12 +393,12 @@ function handleMessage(message) {
 
       // Iniciar showcase em vez de ir direto para votação
       if (selectableSubmittedCardsTexts.length > 0) {
-        statusMessage.textContent = "Reviewing submitted cards..."
+        statusMessage.textContent = "Analisando cartas recebidas..."
         startCardShowcase(selectableSubmittedCardsTexts)
       } else {
         // Fallback se não houver cartas
         gameState = "voting"
-        statusMessage.textContent = "Vote for the best white card."
+        statusMessage.textContent = "Vote na melhor carta branca."
         updateUI()
       }
       break
@@ -415,7 +414,7 @@ function handleMessage(message) {
       }
       
       gameState = "round_result"
-      statusMessage.textContent = `Round Winner: '${roundWinnerCard}' by ${roundWinnerAddress}!`
+      statusMessage.textContent = `Vencedor: '${roundWinnerCard}' by ${roundWinnerAddress}!`
       console.log(`Round Result: '${roundWinnerCard}' by ${roundWinnerAddress}`)
       updateUI()
       break
@@ -429,8 +428,8 @@ function handleMessage(message) {
       const winner = message.winner
       gameWinner = winner
       gameState = "game_over"
-      statusMessage.textContent = `GAME OVER! Winner: ${winner}`
-      gameOverMessageElement.textContent = `GAME OVER! Winner: ${winner}`
+      statusMessage.textContent = `FIM DE JOGO! Vencedor: ${winner}`
+      gameOverMessageElement.textContent = `FIM DE JOGO! Vencedor: ${winner}`
       console.log(`Game Over! Winner: ${winner}`)
       
       // Mostrar tela de vitória
@@ -470,6 +469,7 @@ function updateUI() {
   switch (gameState) {
     case "connecting":
     case "waiting_for_players":
+      statusMessage.textContent = "Esperando por mais players..."
     case "error":
       break
 
@@ -507,7 +507,7 @@ function updateUI() {
       blackCardTextElement.textContent = currentBlackCardText
       whiteCardsContainer.innerHTML = ""
       whiteCardsContainer.style.display = "flex"
-      whiteCardsContainer.textContent = "Waiting for other players to vote..."
+      whiteCardsContainer.textContent = "Aguardando os outros jogadores votarem..."
       break
 
     case "round_result":
@@ -651,7 +651,7 @@ submitButton.addEventListener("click", () => {
       }
     })
 
-    statusMessage.textContent = "Card submitted. Waiting for others..."
+    statusMessage.textContent = "Carta enviada. Aguardando os outros jogadores..."
   }
 })
 
@@ -670,7 +670,7 @@ voteButton.addEventListener("click", () => {
     })
 
     gameState = "waiting_for_vote_result"
-    statusMessage.textContent = "Vote submitted. Waiting for results..."
+    statusMessage.textContent = "Voto enviado. Aguardando os outros jogadores..."
     updateUI()
   }
 })
