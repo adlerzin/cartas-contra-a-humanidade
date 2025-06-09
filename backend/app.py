@@ -161,12 +161,10 @@ async def start_new_round():
              await send_to_client(player_ws, {"action": "get_nome"})
              # >>> CORRIGIDO/AJUSTADO: Distribuir nova mão para CADA jogador <<<
              # Garante que há cartas brancas suficientes para dar uma mão completa
-             if len(white_cards) >= HAND_SIZE:
-                 new_hand = players[player_ws]["hand"].append(random.choice(white_cards))
-                 players[player_ws]["hand"] = new_hand
-                 await send_to_client(player_ws, {"action": "nova_mao", "cartas": players[player_ws]["hand"]})
-                 print(f"Enviando nova mão para {player_ws.remote_address}: {new_hand}") # Debugging
-                 
+             if len(players[player_ws]["hand"]) < HAND_SIZE and white_cards:
+                nova_carta = random.choice(white_cards)
+                players[player_ws]["hand"].append(nova_carta)
+                await send_to_client(player_ws, {"action": "nova_mao", "cartas": players[player_ws]["hand"]})
 
              else:
                  # Tratar caso não haja cartas brancas suficientes para dar uma mão
@@ -342,6 +340,7 @@ async def handler(websocket):
                         print("rodou")
                         submitted_white_cards.append({"player": websocket, "card": card_text})
                         players[websocket]["submitted_this_round"] = True
+                        players[websocket]["hand"].remove(card_text)  # Remover carta usada
                         print(f"Carta branca recebida. Carta: {card_text} Player: {players[websocket]}")
 
                         # >>> AJUSTADO: Remover a carta da mão do jogador após submeter <<<
