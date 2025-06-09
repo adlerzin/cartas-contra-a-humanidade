@@ -5,6 +5,7 @@ import random
 import time
 from cartas import white_cards 
 from cartas import black_cards
+import os
 # import random # Removido import duplicado
 
 # --- Server State ---
@@ -533,7 +534,8 @@ if __name__ == "__main__":
     try:
         import sys
         # Roda o loop de eventos asyncio
-        asyncio.run(main(sys.argv[1]))
+        port = int(os.environ.get("PORT", 10000))
+        asyncio.run(main(port))
     except KeyboardInterrupt:
         print("Servidor encerrado manualmente (KeyboardInterrupt).")
     except Exception as e:
