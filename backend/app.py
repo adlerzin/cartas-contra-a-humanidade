@@ -429,7 +429,7 @@ async def handler(websocket):
 
                                      # Verifica se o vencedor atingiu a pontuação máxima
                                      if winner_score >= max_points:
-                                         print(f"Jogador {players[winner_player_ws]["nome"]} atingiu {max_points} pontos. Finalizando jogo.")
+                                         print(f"Jogador {players[winner_player_ws]['nome']} atingiu {max_points} pontos. Finalizando jogo.")
                                          await end_game(winner_player_ws) # Termina o jogo
                                      else:
                                          # Iniciar próxima rodada após uma pausa
