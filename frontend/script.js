@@ -631,7 +631,7 @@ function updateScoresDisplay() {
     if (score !== 0) {
       const listItem = document.createElement("li")
       const displayAddress = address.split(":")[0]
-      listItem.textContent = `${displayAddress} ${score}`
+      listItem.textContent = `${displayAddress}: ${score} pontos`
       scoresList.appendChild(listItem)
     }
   })
