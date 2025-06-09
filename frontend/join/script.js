@@ -68,7 +68,7 @@ function criarSala() {
     };
 
     const baseUrl = `${window.location.protocol}//${window.location.host}`;
-    const novaUrl = `${baseUrl}/frontend/index.html?nome=${encodeURIComponent(nome)}&sala=${encodeURIComponent(sala)}`;
+    const novaUrl = `${baseUrl}/?nome=${encodeURIComponent(nome)}&sala=${encodeURIComponent(sala)}`;
 
     setTimeout(window.location.href = novaUrl, 1000)
 }
