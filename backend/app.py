@@ -162,7 +162,7 @@ async def start_new_round():
              # >>> CORRIGIDO/AJUSTADO: Distribuir nova mão para CADA jogador <<<
              # Garante que há cartas brancas suficientes para dar uma mão completa
              if len(white_cards) >= HAND_SIZE:
-                 new_hand = random.sample(white_cards, HAND_SIZE)
+                 new_hand = players[player_ws]["hand"].append(random.choice(white_cards, HAND_SIZE))
                  players[player_ws]["hand"] = new_hand
                  await send_to_client(player_ws, {"action": "nova_mao", "cartas": players[player_ws]["hand"]})
                  print(f"Enviando nova mão para {player_ws.remote_address}: {new_hand}") # Debugging
