@@ -628,10 +628,12 @@ function updateScoresDisplay() {
   }
 
   sortedScores.forEach(([address, score]) => {
-    const listItem = document.createElement("li")
-    const displayAddress = address.split(":")[0]
-    listItem.textContent = `${displayAddress}: ${score}`
-    scoresList.appendChild(listItem)
+    if (score !== 0) {
+      const listItem = document.createElement("li")
+      const displayAddress = address.split(":")[0]
+      listItem.textContent = `${displayAddress} ${score}`
+      scoresList.appendChild(listItem)
+    }
   })
 }
 
