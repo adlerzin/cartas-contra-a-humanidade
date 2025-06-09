@@ -7,7 +7,7 @@ const sala = params.get("sala")
 console.log(nome) // "adler"
 console.log(sala) // "8000"
 
-const WS_URL = `wss://cartas-contra-a-humanidade-backend.onrender.com` + sala // Replace with server IP if not local
+const WS_URL = `wss://cartas-contra-a-humanidade-backend.onrender.com` // Replace with server IP if not local
 
 // --- DOM Elements ---
 const statusMessage = document.getElementById("status-message")
@@ -165,7 +165,7 @@ function updateProgressBar() {
 }
 
 function startAutoTimer() {
-  let timeLeft = 500000
+  let timeLeft = 5
   const timerCountdownElement = document.getElementById("timer-countdown")
   const timerBar = document.getElementById("timer-bar")
 
