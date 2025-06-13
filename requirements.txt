@@ -19,7 +19,6 @@ Jinja2==3.1.6
 MarkupSafe==3.0.2
 pydantic==2.11.3
 pydantic_core==2.33.1
-pygame==2.6.1
 PyMuPDF==1.25.5
 python-engineio==4.12.0
 python-socketio==5.13.0
