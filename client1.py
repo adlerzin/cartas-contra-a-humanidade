@@ -31,7 +31,7 @@ COLOR_SELECTION = (255, 200, 0)
 COLOR_SUCCESS = (50, 205, 50)
 COLOR_ERROR = (220, 20, 60)
 COLOR_BORDER = (100, 100, 100)
-DARK_GRAY = (64, 64, 64) # Cor DARK_GRAY que estava faltando
+DARK_GRAY = (64, 64, 64)
 
 # Fontes
 try:
@@ -40,30 +40,26 @@ try:
     font_large = pygame.font.Font(font_path, int(SCREEN_HEIGHT * 0.06))
     font_medium = pygame.font.Font(font_path, int(SCREEN_HEIGHT * 0.04))
     font_small = pygame.font.Font(font_path, int(SCREEN_HEIGHT * 0.03))
-    # Ajustando o tamanho da fonte para as cartas (agora maior)
-    font_card_text = pygame.font.Font(font_path, int(SCREEN_HEIGHT * 0.027)) # Aumentado de 0.025
-    font_card_text_hover = pygame.font.Font(font_path, int(SCREEN_HEIGHT * 0.032)) # Aumentado de 0.028
+    font_card_text = pygame.font.Font(font_path, int(SCREEN_HEIGHT * 0.027))
+    font_card_text_hover = pygame.font.Font(font_path, int(SCREEN_HEIGHT * 0.032))
 except Exception:
     print("Aviso: Não foi possível carregar fontes customizadas. Usando fontes padrão do Pygame.")
     font_xlarge = pygame.font.Font(None, 60)
     font_large = pygame.font.Font(None, 45)
     font_medium = pygame.font.Font(None, 30)
     font_small = pygame.font.Font(None, 20)
-    font_card_text = pygame.font.Font(None, 20) # Ajustado
-    font_card_text_hover = pygame.font.Font(None, 24) # Ajustado
+    font_card_text = pygame.font.Font(None, 20)
+    font_card_text_hover = pygame.font.Font(None, 24)
 
 # Tamanhos de cartas e margens
 CARD_ASPECT_RATIO = 0.7
 
-# Carta preta (maior e mais destacada)
-CARD_HEIGHT_BLACK = int(SCREEN_HEIGHT * 0.35) # Aumentado
+CARD_HEIGHT_BLACK = int(SCREEN_HEIGHT * 0.35)
 CARD_WIDTH_BLACK = int(CARD_HEIGHT_BLACK * CARD_ASPECT_RATIO)
 
-# Cartas na mão do jogador (um pouco maiores e com menos sobreposição)
-CARD_HEIGHT_HAND = int(SCREEN_HEIGHT * 0.28) # Aumentado
+CARD_HEIGHT_HAND = int(SCREEN_HEIGHT * 0.28)
 CARD_WIDTH_HAND = int(CARD_HEIGHT_HAND * CARD_ASPECT_RATIO)
 
-# Cartas para votação (tamanho similar ao anterior)
 CARD_HEIGHT_VOTE = int(SCREEN_HEIGHT * 0.28)
 CARD_WIDTH_VOTE = int(CARD_HEIGHT_VOTE * CARD_ASPECT_RATIO)
 
@@ -78,10 +74,10 @@ MESSAGE_DISPLAY_TIME = 3.0
 MESSAGE_FADE_DURATION = 0.5
 
 # Configurações da Mão de Cartas (Estilo UNO)
-CARD_OVERLAP_FACTOR = 0.35 # Reduzido para mostrar mais da carta (0.0 a 1.0)
-CARD_HOVER_OFFSET_Y = 20 # Quanto a carta sobe no hover
-CARD_SELECT_OFFSET_Y = 40 # Quanto a carta selecionada sobe
-CARD_TEXT_PADDING = 15 # Preenchimento interno para o texto da carta
+CARD_OVERLAP_FACTOR = 0.35
+CARD_HOVER_OFFSET_Y = 20
+CARD_SELECT_OFFSET_Y = 40
+CARD_TEXT_PADDING = 15
 
 class AnimatedMessage:
     def __init__(self, text: str, color: Tuple[int, int, int], font: pygame.font.Font, duration: float, fade_duration: float):
@@ -130,16 +126,13 @@ class GameClient:
         self.countdown = 0
         self.submitted_count = 0
         self.voting_cards = []
-        self.selected_card_index = -1 # Índice da carta branca selecionada na mão
-        self.selected_vote_index = -1 # Índice da carta branca selecionada para votar
+        self.selected_card_index = -1
+        self.selected_vote_index = -1
         self.round_result = {}
         
         # Flags para controlar ações por rodada
         self.has_submitted_this_round = False
         self.has_voted_this_round = False
-        
-        # Animação de cartas (para entrada/saída, não para hover/seleção)
-        self.card_animations: List[Dict[str, Any]] = []
         
         # UI
         self.input_text = ""
@@ -151,7 +144,7 @@ class GameClient:
         
         # Thread para WebSocket
         self.ws_thread = None
-        self.websocket_loop: Optional[asyncio.AbstractEventLoop] = None
+        self.websocket_loop: Optional[asyncio.AbstractEventLoop] = None # Definido como Optional
         
         # Botões para interatividade
         self.buttons: Dict[str, pygame.Rect] = {}
@@ -189,7 +182,6 @@ class GameClient:
     
     def draw_text_multiline(self, surface, text, color, rect, font, align_x="center", align_y="center"):
         """Desenha texto multi-linha com alinhamento, considerando padding."""
-        # Cria um rect interno para o texto, aplicando padding
         text_rect_padded = rect.inflate(-2 * CARD_TEXT_PADDING, -2 * CARD_TEXT_PADDING)
 
         lines = self.wrap_text(text, font, text_rect_padded.width)
@@ -226,34 +218,28 @@ class GameClient:
         text_color = COLOR_TEXT_LIGHT if is_black else COLOR_TEXT_DARK
         border_color = COLOR_SELECTION if selected else COLOR_BORDER
         
-        # Aplica offset se estiver selecionada ou em hover
         offset_y = 0
         if selected:
             offset_y = -CARD_SELECT_OFFSET_Y
-        elif hovered and not is_black: # Hover não afeta cartas pretas
+        elif hovered and not is_black:
             offset_y = -CARD_HOVER_OFFSET_Y
         
         final_y = y + offset_y
 
-        # Desenha a sombra
         shadow_surface = pygame.Surface((width, height), pygame.SRCALPHA)
         pygame.draw.rect(shadow_surface, SHADOW_COLOR, (0, 0, width, height), 0, 10)
         screen.blit(shadow_surface, (x + SHADOW_OFFSET, final_y + SHADOW_OFFSET))
         
-        # Desenha o corpo da carta
         card_rect = pygame.Rect(x, final_y, width, height)
         pygame.draw.rect(screen, card_color, card_rect, 0, 10)
         
-        # Desenha a borda
         pygame.draw.rect(screen, border_color, card_rect, 3, 10)
         
-        # Desenha o texto da carta (usa fonte maior se hovered/selected para melhor legibilidade)
-        # Para cartas pretas, a fonte de hover não é aplicável.
         text_font = font_card_text
-        if (hovered or selected) and not is_black: # Hover/select apenas para cartas brancas
+        if (hovered or selected) and not is_black:
             text_font = font_card_text_hover
         elif is_black:
-            text_font = font_medium # Aumenta a fonte da carta preta sempre
+            text_font = font_medium
 
         self.draw_text_multiline(screen, text, text_color, card_rect, text_font)
     
@@ -429,56 +415,40 @@ class GameClient:
         self.draw_score_board(SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.015), self.header_height + int(SCREEN_HEIGHT * 0.02), 
                               self.scoreboard_width, SCREEN_HEIGHT - self.header_height - int(SCREEN_HEIGHT * 0.04))
 
-        # Posicionamento da Carta Preta (mais destaque)
-        black_card_x = int(SCREEN_WIDTH * 0.05) # Um pouco mais à esquerda
-        black_card_y = self.header_height + int(SCREEN_HEIGHT * 0.05) # Um pouco mais para baixo
+        black_card_x = int(SCREEN_WIDTH * 0.05)
+        black_card_y = self.header_height + int(SCREEN_HEIGHT * 0.05)
         if self.current_black_card:
             self.draw_card(self.current_black_card, black_card_x, black_card_y, 
-                           CARD_WIDTH_BLACK, CARD_HEIGHT_BLACK, True) # Usa CARD_WIDTH_BLACK/HEIGHT_BLACK
+                           CARD_WIDTH_BLACK, CARD_HEIGHT_BLACK, True)
         
-        # Posição do contador de cartas submetidas (ao lado da carta preta)
         submitted_text = font_medium.render(f"Cartas submetidas: {self.submitted_count}/{len(self.scores) - 1 if len(self.scores) > 0 else 0}", True, COLOR_TEXT_LIGHT)
         submitted_text_rect = submitted_text.get_rect(left=black_card_x + CARD_WIDTH_BLACK + int(SCREEN_WIDTH * 0.03), 
                                                       centery=black_card_y + CARD_HEIGHT_BLACK // 2)
         screen.blit(submitted_text, submitted_text_rect)
 
-        # Mão do jogador (cartas brancas) - Estilo UNO
         if self.hand:
-            # Largura disponível para a mão das cartas (sem incluir o scoreboard)
-            available_hand_width = SCREEN_WIDTH - self.scoreboard_width - (2 * int(SCREEN_WIDTH * 0.03)) # Margens laterais
-            
-            # Altura base para o posicionamento da mão
+            available_hand_width = SCREEN_WIDTH - self.scoreboard_width - (2 * int(SCREEN_WIDTH * 0.03))
             base_hand_y = SCREEN_HEIGHT - CARD_HEIGHT_HAND - int(SCREEN_HEIGHT * 0.03)
 
-            # Calcula o espaçamento horizontal entre as cartas para a sobreposição
             if len(self.hand) > 1:
-                # Largura total que as cartas iriam ocupar sem sobreposição
                 full_width_no_overlap = len(self.hand) * CARD_WIDTH_HAND
                 
-                # Se a largura sem sobreposição for maior que a área disponível, sobrepõe mais
                 if full_width_no_overlap > available_hand_width:
-                    # Calcula o espaçamento necessário para encaixar as cartas
                     card_horizontal_spacing = (available_hand_width - CARD_WIDTH_HAND) / (len(self.hand) - 1)
                 else:
-                    # Se há espaço de sobra, distribui as cartas sem muita sobreposição (ou nenhuma)
                     card_horizontal_spacing = CARD_WIDTH_HAND - (CARD_WIDTH_HAND * CARD_OVERLAP_FACTOR)
                     
-            else: # Apenas uma carta
+            else:
                 card_horizontal_spacing = 0 
             
-            # Garante que o espaçamento não seja negativo
             card_horizontal_spacing = max(0, card_horizontal_spacing)
 
-            # Calcula a largura total da "mão" visível com o espaçamento
             hand_display_width = CARD_WIDTH_HAND + (len(self.hand) - 1) * card_horizontal_spacing
 
-            # Centraliza a mão de cartas na área disponível
             start_x = (SCREEN_WIDTH - hand_display_width) // 2 
 
-            # Lista para guardar os rects das cartas para detecção de hover/click
             self.card_rects_in_hand = []
 
-            # Desenha as cartas
             for i, card_text in enumerate(self.hand):
                 x = int(start_x + i * card_horizontal_spacing)
                 y = base_hand_y
@@ -486,28 +456,17 @@ class GameClient:
                 is_selected = (self.selected_card_index == i)
                 is_hovered = (self.hover_card_index == i)
 
-                # Desenha a carta
                 self.draw_card(card_text, x, y, CARD_WIDTH_HAND, CARD_HEIGHT_HAND, False, is_selected, is_hovered)
                 
-                # Armazena o rect da carta para detecção de hover/click.
-                # A área de clique da carta é a parte visível dela + a sobreposição
-                # Se for a última carta, ela ocupa toda a largura.
-                # Se não for a última, a largura de colisão é a parte visível (card_horizontal_spacing)
-                # mais um pedaço da parte sobreposta (para facilitar o clique/hover)
-                
-                # Ajusta o rect considerando o offset de hover/seleção para a detecção de clique
                 current_card_rect = pygame.Rect(x, y, CARD_WIDTH_HAND, CARD_HEIGHT_HAND)
                 if is_selected:
                     current_card_rect.y -= CARD_SELECT_OFFSET_Y
                 elif is_hovered:
                     current_card_rect.y -= CARD_HOVER_OFFSET_Y
 
-                # Para hover, a área de detecção deve ser a parte visível da carta
-                # Se não for a última carta, a largura de detecção é 'card_horizontal_spacing'
-                # ou a largura total se for a última.
                 hover_width = CARD_WIDTH_HAND
                 if i < len(self.hand) - 1:
-                    hover_width = int(card_horizontal_spacing + (CARD_WIDTH_HAND * CARD_OVERLAP_FACTOR * 0.5)) # Pega um pouco da parte escondida
+                    hover_width = int(card_horizontal_spacing + (CARD_WIDTH_HAND * CARD_OVERLAP_FACTOR * 0.5))
 
                 hover_rect = pygame.Rect(x, current_card_rect.y, hover_width, CARD_HEIGHT_HAND)
                 self.card_rects_in_hand.append(hover_rect)
@@ -534,34 +493,27 @@ class GameClient:
         self.draw_score_board(SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.015), self.header_height + int(SCREEN_HEIGHT * 0.02), 
                               self.scoreboard_width, SCREEN_HEIGHT - self.header_height - int(SCREEN_HEIGHT * 0.04))
 
-        # Posicionamento da Carta Preta
         black_card_x = int(SCREEN_WIDTH * 0.05)
         black_card_y = self.header_height + int(SCREEN_HEIGHT * 0.05)
         if self.current_black_card:
             self.draw_card(self.current_black_card, black_card_x, black_card_y, 
-                           CARD_WIDTH_BLACK, CARD_HEIGHT_BLACK, True) # Usa CARD_WIDTH_BLACK/HEIGHT_BLACK
+                           CARD_WIDTH_BLACK, CARD_HEIGHT_BLACK, True)
         
         vote_title = font_medium.render("Vote na melhor resposta:", True, COLOR_TEXT_LIGHT)
         vote_rect = vote_title.get_rect(centerx=SCREEN_WIDTH//2, top=self.header_height + int(SCREEN_HEIGHT * 0.05))
         screen.blit(vote_title, vote_rect)
         
         if self.voting_cards:
-            # Reajusta o layout das cartas de votação para evitar amontoamento
-            cards_in_row = 3 # Reduzi para 3 cartas por linha para mais espaço
+            cards_in_row = 3
             
-            # Largura máxima disponível para as cartas de votação (excluindo scoreboard e margens)
             max_vote_area_width = SCREEN_WIDTH - self.scoreboard_width - (2 * int(SCREEN_WIDTH * 0.03)) 
             
-            # Calcula a largura de cada carta + margem
             card_total_width = CARD_WIDTH_VOTE + CARD_MARGIN
             
-            # Garante que cards_in_row não exceda o número de cartas disponíveis
             actual_cards_in_row = min(len(self.voting_cards), cards_in_row)
 
-            # Calcula a largura total que as cartas realmente ocuparão na linha
             total_cards_width = (actual_cards_in_row * CARD_WIDTH_VOTE) + ((actual_cards_in_row - 1) * CARD_MARGIN)
             
-            # Centraliza as cartas horizontalmente na área disponível
             start_x = (SCREEN_WIDTH - total_cards_width) // 2
             start_y = int(SCREEN_HEIGHT * 0.35)
             
@@ -596,12 +548,11 @@ class GameClient:
         self.draw_score_board(SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.015), self.header_height + int(SCREEN_HEIGHT * 0.02), 
                               self.scoreboard_width, SCREEN_HEIGHT - self.header_height - int(SCREEN_HEIGHT * 0.04))
 
-        # Posicionamento da Carta Preta
         black_card_x = int(SCREEN_WIDTH * 0.05)
         black_card_y = self.header_height + int(SCREEN_HEIGHT * 0.05)
         if self.current_black_card:
             self.draw_card(self.current_black_card, black_card_x, black_card_y, 
-                           CARD_WIDTH_BLACK, CARD_HEIGHT_BLACK, True) # Usa CARD_WIDTH_BLACK/HEIGHT_BLACK
+                           CARD_WIDTH_BLACK, CARD_HEIGHT_BLACK, True)
         
         if self.round_result:
             winner_card_text = self.round_result.get("winner_card", "")
@@ -611,14 +562,13 @@ class GameClient:
             result_rect = result_title.get_rect(centerx=SCREEN_WIDTH//2, top=self.header_height + int(SCREEN_HEIGHT * 0.05))
             screen.blit(result_title, result_rect)
             
-            # Aumenta o tamanho da carta vencedora para destaque
             WINNER_CARD_HEIGHT = int(SCREEN_HEIGHT * 0.35)
             WINNER_CARD_WIDTH = int(WINNER_CARD_HEIGHT * CARD_ASPECT_RATIO)
 
             winner_card_x = (SCREEN_WIDTH // 2) - (WINNER_CARD_WIDTH // 2)
             winner_card_y = int(SCREEN_HEIGHT * 0.35)
             self.draw_card(winner_card_text, winner_card_x, winner_card_y, 
-                           WINNER_CARD_WIDTH, WINNER_CARD_HEIGHT, False, True) # Carta branca, selecionada
+                           WINNER_CARD_WIDTH, WINNER_CARD_HEIGHT, False, True)
             
             winner_text = font_medium.render(f"Vencedor da Rodada: {winner_name}", True, COLOR_SELECTION)
             winner_text_rect = winner_text.get_rect(center=(SCREEN_WIDTH//2, winner_card_y + WINNER_CARD_HEIGHT + int(SCREEN_HEIGHT * 0.05)))
@@ -740,9 +690,7 @@ class GameClient:
         
         elif self.game_state == "in_game":
             if not self.voting_cards:  # Fase de submissão
-                # Clique nas cartas da mão
                 if not self.has_submitted_this_round and self.hand and hasattr(self, 'card_rects_in_hand'):
-                    # Percorre os rects em ordem inversa para pegar a carta "de cima" primeiro
                     for i in reversed(range(len(self.card_rects_in_hand))):
                         card_rect = self.card_rects_in_hand[i]
                         if card_rect.collidepoint(pos):
@@ -750,25 +698,21 @@ class GameClient:
                                 self.selected_card_index = -1
                             else:
                                 self.selected_card_index = i
-                            break # Sai do loop após encontrar a primeira colisão
+                            break
                 
-                # Botão de submeter
                 if "submit" in self.buttons and self.buttons["submit"].collidepoint(pos):
                     if not self.has_submitted_this_round:
                         if self.selected_card_index != -1:
                             self.submit_card()
                             self.set_message("Carta submetida!", COLOR_SUCCESS)
-                            # has_submitted_this_round é setado dentro de submit_card
                         else:
                             self.set_message("Selecione uma carta para submeter.", COLOR_ERROR)
                     else:
                         self.set_message("Você já submeteu sua carta nesta rodada.", COLOR_ERROR)
             
             else:  # Fase de votação
-                # Clique nas cartas de votação
                 if not self.has_voted_this_round and self.voting_cards:
-                    # Cartas de votação não são sobrepostas, então loop normal
-                    cards_in_row = 3 # Usa o mesmo cards_in_row da função draw_voting_screen
+                    cards_in_row = 3
                     card_width = CARD_WIDTH_VOTE
                     card_height = CARD_HEIGHT_VOTE
                     card_spacing = CARD_MARGIN
@@ -794,13 +738,11 @@ class GameClient:
                                 self.selected_vote_index = i
                             break
                 
-                # Botão de votar
                 if "vote" in self.buttons and self.buttons["vote"].collidepoint(pos):
                     if not self.has_voted_this_round:
                         if self.selected_vote_index != -1:
                             self.vote_card()
                             self.set_message("Voto enviado!", COLOR_SUCCESS)
-                            # has_voted_this_round é setado dentro de vote_card
                         else:
                             self.set_message("Selecione uma carta para votar.", COLOR_ERROR)
                     else:
@@ -812,10 +754,8 @@ class GameClient:
                 self.set_message("Iniciando nova partida...", COLOR_TEXT_LIGHT)
     
     def handle_mouse_motion(self, pos):
-        """Lida com o movimento do mouse para detecção de hover nas cartas da mão."""
         if self.game_state == "in_game" and not self.voting_cards and self.hand and hasattr(self, 'card_rects_in_hand'):
             new_hover_index = -1
-            # Itera em ordem inversa para pegar a carta "de cima" primeiro na sobreposição
             for i in reversed(range(len(self.card_rects_in_hand))):
                 card_rect = self.card_rects_in_hand[i]
                 if card_rect.collidepoint(pos):
@@ -823,7 +763,7 @@ class GameClient:
                     break
             self.hover_card_index = new_hover_index
         else:
-            self.hover_card_index = -1 # Reseta se não estiver na fase de submissão
+            self.hover_card_index = -1
 
     def handle_keydown(self, event):
         if self.input_active:
@@ -850,25 +790,26 @@ class GameClient:
         if self.ws_thread is None or not self.ws_thread.is_alive():
             print(f"[CLIENT] Tentando conectar ao servidor com nome '{self.player_name}' e sala '{self.room_code}'")
             self.set_message("Conectando ao servidor...", COLOR_TEXT_LIGHT)
-            self.ws_thread = threading.Thread(target=self.run_websocket, daemon=True)
+            # Cria um novo loop de eventos para a thread do websocket
+            self.websocket_loop = asyncio.new_event_loop()
+            self.ws_thread = threading.Thread(target=self._run_websocket_in_thread, daemon=True)
             self.ws_thread.start()
         else:
             self.set_message("Já conectado ou tentando conectar.", COLOR_ERROR)
     
-    def run_websocket(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        self.websocket_loop = loop
-        
+    def _run_websocket_in_thread(self):
+        """Função a ser executada na thread separada para o WebSocket."""
+        asyncio.set_event_loop(self.websocket_loop)
         try:
-            loop.run_until_complete(self.websocket_client())
+            self.websocket_loop.run_until_complete(self.websocket_client())
         except Exception as e:
             print(f"[CLIENT ERROR] Erro no loop da thread WebSocket: {e}")
             self.set_message(f"Erro interno de conexão: {e}", COLOR_ERROR)
         finally:
-            if loop.is_running():
-                loop.close()
-    
+            if not self.websocket_loop.is_closed():
+                # self.websocket_loop.close() # Não fechar aqui, pode ser necessário para outras corrotinas
+                print("[CLIENT] Loop WebSocket thread finalizado.")
+
     async def websocket_client(self):
         port = int(os.environ.get("PORT", 10000))
         uri = f"ws://localhost:{port}"
@@ -909,8 +850,10 @@ class GameClient:
             self.game_state = "disconnected"
             self.set_message(f"Erro inesperado de conexão: {e}. Tente novamente.", COLOR_ERROR)
         finally:
-            self.websocket = None
-    
+            self.websocket = None # Garante que o websocket está limpo
+            print("[CLIENT] WebSocket instance set to None.")
+
+
     async def handle_server_message(self, data):
         action = data.get("action")
         print(f"[CLIENT] Received action: {action} - Data: {data}")
@@ -922,20 +865,22 @@ class GameClient:
                 self.set_message("Aguardando mais jogadores...", COLOR_TEXT_LIGHT)
             elif self.game_state == "in_game" and old_state != "in_game":
                 self.set_message("O jogo começou!", COLOR_SUCCESS)
-            # Ao ir para round_result ou game_over, resetamos flags para a próxima rodada/partida
-            # Isso é crucial para que o jogador possa participar da nova rodada sem travar.
-            if self.game_state in ["round_result", "game_over"] and old_state == "in_game":
+            
+            # **CORREÇÃO CRÍTICA 1:** Resetar flags quando o estado de jogo transiciona para um estado final/de rodada
+            if self.game_state in ["round_result", "game_over"]:
                 self.has_submitted_this_round = False
                 self.has_voted_this_round = False
-                print("[CLIENT] Flags de submissão/voto resetadas para nova rodada/partida.")
+                self.selected_card_index = -1 # Limpa seleção da mão
+                self.selected_vote_index = -1 # Limpa seleção de voto
+                print(f"[CLIENT] Flags de submissão/voto resetadas no state_update para '{self.game_state}'.")
+
 
         elif action == "nova_mao":
             new_hand_list = data.get("cartas", [])
             self.hand = new_hand_list
             self.selected_card_index = -1
-            self.hover_card_index = -1 # Reseta o hover
+            self.hover_card_index = -1
             self.set_message("Você recebeu uma nova mão!", COLOR_TEXT_LIGHT)
-            # self.has_submitted_this_round = False # Já é resetado no game_state_update, evita redundância
         
         elif action == "scores_update":
             self.scores = data.get("scores", {})
@@ -953,7 +898,7 @@ class GameClient:
             self.submitted_count = 0 
             self.voting_cards = [] 
             self.selected_vote_index = -1
-            # Garante que a rodada começa limpa para submissão e votação, mesmo que game_state_update não tenha vindo
+            # **CORREÇÃO CRÍTICA 1.1:** Resetar flags aqui também para garantir, caso o state_update falhe.
             self.has_submitted_this_round = False 
             self.has_voted_this_round = False 
             self.set_message("Nova carta preta! Escolha sua melhor resposta.", COLOR_TEXT_LIGHT)
@@ -975,8 +920,11 @@ class GameClient:
                 "winner_address": data.get("winner_address", "")
             }
             self.game_state = "round_result"
-            self.set_message(f"Vencedor da rodada: {self.round_result['winner_address']}!", COLOR_SUCCESS)
-            # Flags de submissão/voto serão resetadas com o game_state_update para round_result
+            self.set_message(f"Vencedor da Rodada: {self.round_result['winner_address']}!", COLOR_SUCCESS)
+            # As flags já devem ter sido resetadas pelo game_state_update para 'round_result'
+            # Mas, para garantir, vamos resetar aqui também se o 'game_state_update' for perdido
+            self.has_submitted_this_round = False
+            self.has_voted_this_round = False
 
         elif action == "game_over":
             self.round_result = {
@@ -989,15 +937,14 @@ class GameClient:
             self.has_voted_this_round = False
         
         elif action == "next_round":
-            # O servidor sinaliza que a próxima rodada está começando.
-            # O cliente deve esperar por 'black_card' e 'nova_mao' para atualizar o display.
+            # **CORREÇÃO CRÍTICA 2:** Limpar o estado do cliente para a próxima rodada
+            print("[CLIENT] Recebido 'next_round'. Preparando para a nova rodada.")
             self.voting_cards = [] # Limpa as cartas de votação da rodada anterior
             self.selected_card_index = -1
             self.selected_vote_index = -1
             self.submitted_count = 0
             self.set_message("Iniciando próxima rodada...", COLOR_TEXT_LIGHT)
-            # game_state já deve ter sido setado para "in_game" ou similar pelo 'game_state_update'
-            # As flags de submissão/voto já foram resetadas quando entrou em "round_result"
+            # As flags de submissão/voto já foram resetadas quando entrou em "round_result" ou "game_over"
         
         elif action == "get_nome":
             if self.websocket:
@@ -1058,21 +1005,48 @@ class GameClient:
     
     def restart_game(self):
         print("[CLIENT] Reiniciando estado do cliente para nova partida.")
-        if self.websocket and self.websocket_loop:
-            try:
-                # Tenta fechar o WebSocket de forma assíncrona na thread do WebSocket
-                close_task = asyncio.run_coroutine_threadsafe(self.websocket.close(), self.websocket_loop)
-                close_task.result(timeout=1.0) # Espera um pouco para garantir o fechamento
-                print("[CLIENT] WebSocket fechado com sucesso durante reinício.")
-            except asyncio.TimeoutError:
-                print("[CLIENT WARNING] Timeout ao tentar fechar WebSocket na reinicialização.")
-            except Exception as e:
-                print(f"[CLIENT ERROR] Erro ao tentar fechar WebSocket na reinicialização: {e}")
-            finally:
-                self.websocket = None
-                self.websocket_loop = None # Força a criação de um novo loop/thread
-                self.ws_thread = None # Permite que uma nova thread seja criada
-                print("[CLIENT] Variáveis de WebSocket resetadas.")
+        # **CORREÇÃO CRÍTICA 3:** Gerenciamento da thread do WebSocket ao reiniciar o jogo
+        if self.websocket and self.websocket_loop and not self.websocket_loop.is_closed():
+            async def _close_websocket():
+                try:
+                    await self.websocket.close()
+                    print("[CLIENT] WebSocket fechado com sucesso durante reinício.")
+                except Exception as e:
+                    print(f"[CLIENT ERROR] Erro ao tentar fechar WebSocket na reinicialização: {e}")
+            
+            # Executa o fechamento no loop do WebSocket se ele ainda estiver rodando
+            if self.websocket_loop.is_running():
+                future = asyncio.run_coroutine_threadsafe(_close_websocket(), self.websocket_loop)
+                try:
+                    future.result(timeout=1.0) # Espera um pouco
+                except asyncio.TimeoutError:
+                    print("[CLIENT WARNING] Timeout ao tentar fechar WebSocket na reinicialização.")
+            else:
+                # Se o loop não está rodando, podemos tentar fechar diretamente se o websocket existir
+                # Embora seja menos comum, adicionamos essa segurança
+                if self.websocket:
+                    try:
+                        self.websocket_loop.run_until_complete(_close_websocket())
+                    except Exception as e:
+                        print(f"[CLIENT ERROR] Erro ao tentar fechar WebSocket diretamente na reinicialização: {e}")
+
+        # Garante que a thread é parada e o loop é fechado, se necessário
+        if self.ws_thread and self.ws_thread.is_alive():
+            # Não é recomendado matar threads diretamente, a flag `self.running = False`
+            # no `run()` principal do Pygame e o tratamento no `websocket_client()`
+            # já devem lidar com a saída elegante.
+            # Aqui, apenas garantimos que referências são limpas para uma nova thread.
+            pass # A lógica de fechamento acima já cuida da conexão.
+
+        if self.websocket_loop and not self.websocket_loop.is_closed():
+             self.websocket_loop.stop()
+             self.websocket_loop.close()
+             print("[CLIENT] WebSocket loop fechado.")
+
+        self.websocket = None
+        self.websocket_loop = None # Força a criação de um novo loop/thread
+        self.ws_thread = None # Permite que uma nova thread seja criada
+        print("[CLIENT] Variáveis de WebSocket resetadas.")
 
         # Reinicia o estado do jogo
         self.game_state = "disconnected"
@@ -1092,8 +1066,7 @@ class GameClient:
         self.input_type = "name"
         self.has_submitted_this_round = False
         self.has_voted_this_round = False
-        self.card_animations = [] # Limpa animações pendentes
-        self.hover_card_index = -1 # Reseta o hover
+        self.hover_card_index = -1
         self.set_message("Bem-vindo! Digite seu nome para começar.", COLOR_TEXT_LIGHT)
         print("[CLIENT] Cliente redefinido para estado inicial.")
 
@@ -1114,20 +1087,21 @@ class GameClient:
                 elif event.type == pygame.KEYDOWN:
                     self.handle_keydown(event)
                 elif event.type == pygame.MOUSEMOTION:
-                    self.handle_mouse_motion(event.pos) # Novo handler para movimento do mouse
+                    self.handle_mouse_motion(event.pos)
             
             self.draw()
             clock.tick(60)
         
         # Cleanup final
-        if self.websocket and self.websocket_loop:
-            try:
-                future = asyncio.run_coroutine_threadsafe(self.websocket.close(), self.websocket_loop)
-                future.result(timeout=1.0)
-            except asyncio.TimeoutError:
-                print("[CLIENT WARNING] Timeout ao tentar fechar WebSocket no cleanup final.")
-            except Exception as e:
-                print(f"[CLIENT ERROR] Erro no cleanup final ao fechar WebSocket: {e}")
+        # Garante que o loop do WebSocket é parado e fechado ao sair do Pygame
+        if self.websocket_loop and self.websocket_loop.is_running():
+            self.websocket_loop.call_soon_threadsafe(self.websocket_loop.stop)
+            # Permite que a thread termine
+            if self.ws_thread and self.ws_thread.is_alive():
+                self.ws_thread.join(timeout=1.0) # Espera a thread terminar
+        if self.websocket_loop and not self.websocket_loop.is_closed():
+            self.websocket_loop.close()
+            print("[CLIENT] WebSocket loop fechado durante cleanup final.")
         
         pygame.quit()
         sys.exit()
