@@ -32,7 +32,7 @@ COLOR_SELECTION = (255, 200, 0) # Amarelo vibrante para seleção
 COLOR_SUCCESS = (50, 205, 50) # Verde para sucesso (ex: voto)
 COLOR_ERROR = (220, 20, 60) # Vermelho para erro
 COLOR_BORDER = (100, 100, 100) # Cor da borda geral
-DARK_GRAY = (128,128,128)
+DARK_GRAY = (64, 64, 64) # Adicionado: Cor DARK_GRAY que estava faltando
 
 # Fontes (usando uma fonte padrão mais moderna, se disponível, ou fallback)
 try:
@@ -81,7 +81,7 @@ class AnimatedMessage:
         self.start_time = time.time()
         self.duration = duration
         self.fade_duration = fade_duration
-        self.alpha = 255 # Opacidade inicial
+        self.alpha = 255 # Opacidade inicial (começa totalmente visível, pode adicionar fade-in inicial se desejar)
 
     def update(self):
         elapsed = time.time() - self.start_time
@@ -97,10 +97,11 @@ class AnimatedMessage:
             self.alpha = 255 # Totalmente visível
 
     def draw(self, surface, center_pos: Tuple[int, int]):
-        text_surface = self.font.render(self.text, True, self.color)
-        text_surface.set_alpha(self.alpha) # Aplica a opacidade
-        text_rect = text_surface.get_rect(center=center_pos)
-        surface.blit(text_surface, text_rect)
+        if self.alpha > 0: # Desenha apenas se for visível
+            text_surface = self.font.render(self.text, True, self.color)
+            text_surface.set_alpha(self.alpha) # Aplica a opacidade
+            text_rect = text_surface.get_rect(center=center_pos)
+            surface.blit(text_surface, text_rect)
 
     def is_finished(self) -> bool:
         return time.time() - self.start_time > self.duration
@@ -124,6 +125,10 @@ class GameClient:
         self.selected_card_index = -1 # Índice da carta branca selecionada na mão
         self.selected_vote_index = -1 # Índice da carta branca selecionada para votar
         self.round_result = {} # Resultado da rodada (vencedor, carta)
+        
+        # Flags para controlar ações por rodada
+        self.has_submitted_this_round = False
+        self.has_voted_this_round = False
         
         # Animação de cartas
         self.card_animations: List[Dict[str, Any]] = [] # [{"card": text, "start_pos": (x,y), "end_pos": (x,y), "start_time": time, "duration": float}]
@@ -217,8 +222,9 @@ class GameClient:
         scaled_y = y + (height - scaled_height) // 2
 
         # Desenha a sombra
-        shadow_rect = pygame.Rect(scaled_x + SHADOW_OFFSET, scaled_y + SHADOW_OFFSET, scaled_width, scaled_height)
-        pygame.draw.rect(screen, SHADOW_COLOR, shadow_rect, 0, 10) # Arredondamento
+        shadow_surface = pygame.Surface((scaled_width, scaled_height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surface, SHADOW_COLOR, (0, 0, scaled_width, scaled_height), 0, 10) # Arredondamento
+        screen.blit(shadow_surface, (scaled_x + SHADOW_OFFSET, scaled_y + SHADOW_OFFSET))
         
         # Desenha o corpo da carta
         card_rect = pygame.Rect(scaled_x, scaled_y, scaled_width, scaled_height)
@@ -232,14 +238,18 @@ class GameClient:
     
     def draw_button(self, text: str, x: int, y: int, width: int, height: int, 
                    color: tuple = COLOR_BUTTON_NORMAL, text_color: tuple = COLOR_TEXT_LIGHT, 
-                   hover_color: tuple = COLOR_BUTTON_HOVER) -> pygame.Rect:
-        """Desenha um botão e retorna seu rect. Lida com hover."""
+                   hover_color: tuple = COLOR_BUTTON_HOVER, disabled: bool = False) -> pygame.Rect:
+        """Desenha um botão e retorna seu rect. Lida com hover e estado desabilitado."""
         button_rect = pygame.Rect(x, y, width, height)
         current_color = color
         
-        mouse_pos = pygame.mouse.get_pos()
-        if button_rect.collidepoint(mouse_pos):
-            current_color = hover_color
+        if disabled:
+            current_color = (current_color[0] // 2, current_color[1] // 2, current_color[2] // 2) # Escurece a cor
+            text_color = (text_color[0] // 2, text_color[1] // 2, text_color[2] // 2) # Escurece o texto
+        else:
+            mouse_pos = pygame.mouse.get_pos()
+            if button_rect.collidepoint(mouse_pos):
+                current_color = hover_color
         
         pygame.draw.rect(screen, current_color, button_rect, 0, 5) # Arredondamento
         pygame.draw.rect(screen, COLOR_BORDER, button_rect, 2, 5) # Borda
@@ -426,55 +436,74 @@ class GameClient:
         # Mão do jogador (cartas brancas)
         if self.hand:
             cards_in_row = 6 # Ajustado para 16:9
-            max_hand_width = SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.05) # Largura disponível para mão
+            max_hand_area_width = SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.05) # Largura disponível para mão
             
-            # Ajusta o espaçamento se a mão for pequena para centralizar
-            actual_hand_width = (len(self.hand) * CARD_WIDTH_HAND) + ((len(self.hand) - 1) * CARD_MARGIN)
-            if actual_hand_width > max_hand_width: # Se as cartas não couberem em uma linha, divida em várias
-                 # Recalcula quantas cartas cabem em uma linha
-                 cards_in_row = min(len(self.hand), int((max_hand_width + CARD_MARGIN) / (CARD_WIDTH_HAND + CARD_MARGIN)))
-                 if cards_in_row == 0: cards_in_row = 1 # Garante pelo menos 1 carta por linha
+            # Recalcula quantas cartas cabem em uma linha baseada na largura disponível
+            # E garante que não divida por zero se CARD_WIDTH_HAND ou CARD_MARGIN for 0 (embora não deva ser)
+            if (CARD_WIDTH_HAND + CARD_MARGIN) > 0:
+                cards_in_row = min(len(self.hand), int((max_hand_area_width + CARD_MARGIN) / (CARD_WIDTH_HAND + CARD_MARGIN)))
+            if cards_in_row == 0: cards_in_row = 1 # Garante pelo menos 1 carta por linha
 
-                 total_cards_width = (cards_in_row * CARD_WIDTH_HAND) + ((cards_in_row - 1) * CARD_MARGIN)
-                 start_x = int(SCREEN_WIDTH * 0.03) # Mais para a esquerda, abaixo do placar
-            else:
-                 total_cards_width = actual_hand_width
-                 start_x = (SCREEN_WIDTH - total_cards_width) // 2
+            # Calcula a largura total da linha de cartas para centralizar
+            total_cards_width_line = (cards_in_row * CARD_WIDTH_HAND) + ((cards_in_row - 1) * CARD_MARGIN)
+            start_x = (max_hand_area_width - total_cards_width_line) // 2 + int(SCREEN_WIDTH * 0.03)
                  
             start_y = SCREEN_HEIGHT - CARD_HEIGHT_HAND - int(SCREEN_HEIGHT * 0.03) # Perto da base
 
+            # Para animação: armazenar posições alvo
+            target_positions = {}
             for i, card_text in enumerate(self.hand):
                 col = i % cards_in_row
                 row = i // cards_in_row
-                
-                target_x = start_x + col * (CARD_WIDTH_HAND + CARD_MARGIN)
-                target_y = start_y - row * (CARD_HEIGHT_HAND + CARD_MARGIN) # Múltiplas linhas para a mão
+                target_positions[card_text] = (start_x + col * (CARD_WIDTH_HAND + CARD_MARGIN), 
+                                              start_y - row * (CARD_HEIGHT_HAND + CARD_MARGIN))
 
-                # Animação de deslize
-                current_x, current_y = target_x, target_y # Posição padrão
-                animation_active = False
-                for anim in self.card_animations:
-                    if anim["card"] == card_text:
-                        progress = (time.time() - anim["start_time"]) / anim["duration"]
-                        if progress < 1:
-                            current_x = anim["start_pos"][0] + (target_x - anim["start_pos"][0]) * progress
-                            current_y = anim["start_pos"][1] + (target_y - anim["start_pos"][1]) * progress
-                            animation_active = True
-                        else:
-                            self.card_animations.remove(anim) # Remove animação finalizada
-                        break
+            # Atualizar animações
+            new_card_animations = []
+            for anim in self.card_animations:
+                if anim["card"] in target_positions:
+                    anim["end_pos"] = target_positions[anim["card"]] # Atualiza a posição final
+                    progress = (time.time() - anim["start_time"]) / anim["duration"]
+                    if progress < 1:
+                        anim["current_pos"] = (
+                            anim["start_pos"][0] + (anim["end_pos"][0] - anim["start_pos"][0]) * progress,
+                            anim["start_pos"][1] + (anim["end_pos"][1] - anim["start_pos"][1]) * progress
+                        )
+                        new_card_animations.append(anim)
+                    # else: remove a animação
+            self.card_animations = new_card_animations
+            
+            # Desenha as cartas, priorizando as animadas
+            drawn_animated_cards = set()
+            for anim in self.card_animations:
+                card_text = anim["card"]
+                x, y = anim["current_pos"]
+                is_selected = (self.selected_card_index != -1 and self.hand[self.selected_card_index] == card_text)
                 
                 current_scale = 1.0
-                if selected_card_index := self.selected_card_index == i: # Usa walrus operator para atribuir e verificar
-                    # Animação de batida para seleção
+                if is_selected:
                     self.selected_card_anim_scale += (1.05 - self.selected_card_anim_scale) * 0.1
-                    if abs(1.05 - self.selected_card_anim_scale) < 0.01: self.selected_card_anim_scale = 1.05 # Evita oscilação
+                    if abs(1.05 - self.selected_card_anim_scale) < 0.01: self.selected_card_anim_scale = 1.05
                     current_scale = self.selected_card_anim_scale
                 else:
-                    self.selected_card_anim_scale = 1.0 # Reseta a escala se não estiver selecionada
+                    self.selected_card_anim_scale = 1.0
+                
+                self.draw_card(card_text, int(x), int(y), CARD_WIDTH_HAND, CARD_HEIGHT_HAND, False, is_selected, current_scale)
+                drawn_animated_cards.add(card_text)
 
-
-                self.draw_card(card_text, int(current_x), int(current_y), CARD_WIDTH_HAND, CARD_HEIGHT_HAND, False, selected_card_index, current_scale)
+            # Desenha as cartas não animadas ou já finalizadas
+            for i, card_text in enumerate(self.hand):
+                if card_text not in drawn_animated_cards:
+                    x, y = target_positions[card_text] # Usa a posição final
+                    is_selected = (self.selected_card_index == i)
+                    current_scale = 1.0
+                    if is_selected:
+                        self.selected_card_anim_scale += (1.05 - self.selected_card_anim_scale) * 0.1
+                        if abs(1.05 - self.selected_card_anim_scale) < 0.01: self.selected_card_anim_scale = 1.05
+                        current_scale = self.selected_card_anim_scale
+                    else:
+                        self.selected_card_anim_scale = 1.0
+                    self.draw_card(card_text, int(x), int(y), CARD_WIDTH_HAND, CARD_HEIGHT_HAND, False, is_selected, current_scale)
         
         # Botão de submeter carta
         submit_button_width = int(SCREEN_WIDTH * 0.15)
@@ -482,8 +511,10 @@ class GameClient:
         submit_button_x = SCREEN_WIDTH // 2 - submit_button_width // 2
         submit_button_y = SCREEN_HEIGHT - submit_button_height - int(SCREEN_HEIGHT * 0.02)
         
+        # Desabilita o botão se já submeteu
         self.buttons["submit"] = self.draw_button("Submeter Carta", submit_button_x, 
-                                                 submit_button_y, submit_button_width, submit_button_height, COLOR_SUCCESS)
+                                                 submit_button_y, submit_button_width, submit_button_height, 
+                                                 COLOR_SUCCESS, disabled=self.has_submitted_this_round)
         
         # Mensagem temporária
         if self.current_message:
@@ -516,6 +547,12 @@ class GameClient:
         # Cartas para votação
         if self.voting_cards:
             cards_in_row = 4 # Ajustado para 16:9
+            # Ajuste dinâmico para caber mais cartas se necessário
+            max_vote_area_width = SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.05)
+            if (CARD_WIDTH_VOTE + CARD_MARGIN) > 0:
+                cards_in_row = min(len(self.voting_cards), int((max_vote_area_width + CARD_MARGIN) / (CARD_WIDTH_VOTE + CARD_MARGIN)))
+            if cards_in_row == 0: cards_in_row = 1
+
             total_cards_width = (cards_in_row * CARD_WIDTH_VOTE) + ((cards_in_row - 1) * CARD_MARGIN)
             start_x = (SCREEN_WIDTH - total_cards_width) // 2
             start_y = int(SCREEN_HEIGHT * 0.35) # Posição inicial das cartas de votação
@@ -528,22 +565,24 @@ class GameClient:
                 y = start_y + row * (CARD_HEIGHT_VOTE + CARD_MARGIN)
                 
                 current_scale = 1.0
-                if selected_vote_index := self.selected_vote_index == i:
+                if self.selected_vote_index == i: # Usa self.selected_vote_index diretamente
                     self.vote_card_anim_scale += (1.05 - self.vote_card_anim_scale) * 0.1
                     if abs(1.05 - self.vote_card_anim_scale) < 0.01: self.vote_card_anim_scale = 1.05
                     current_scale = self.vote_card_anim_scale
                 else:
                     self.vote_card_anim_scale = 1.0
 
-                self.draw_card(card_text, x, y, CARD_WIDTH_VOTE, CARD_HEIGHT_VOTE, False, selected_vote_index, current_scale)
+                self.draw_card(card_text, x, y, CARD_WIDTH_VOTE, CARD_HEIGHT_VOTE, False, self.selected_vote_index == i, current_scale)
         
         # Botão de votar
         vote_button_width = int(SCREEN_WIDTH * 0.15)
         vote_button_height = int(SCREEN_HEIGHT * 0.07)
         vote_button_x = SCREEN_WIDTH // 2 - vote_button_width // 2
         vote_button_y = SCREEN_HEIGHT - vote_button_height - int(SCREEN_HEIGHT * 0.02)
+        # Desabilita o botão se já votou
         self.buttons["vote"] = self.draw_button("Votar", vote_button_x, 
-                                               vote_button_y, vote_button_width, vote_button_height, COLOR_SUCCESS)
+                                               vote_button_y, vote_button_width, vote_button_height, 
+                                               COLOR_SUCCESS, disabled=self.has_voted_this_round)
         
         # Mensagem temporária
         if self.current_message:
@@ -710,20 +749,19 @@ class GameClient:
         elif self.game_state == "in_game":
             if not self.voting_cards:  # Fase de submissão
                 # Clique nas cartas da mão
-                if self.hand:
+                if not self.has_submitted_this_round and self.hand: # Só permite selecionar se ainda não submeteu
                     cards_in_row = 6
                     card_width = CARD_WIDTH_HAND
                     card_height = CARD_HEIGHT_HAND
                     card_spacing = CARD_MARGIN
                     
-                    max_hand_width = SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.05)
-                    actual_hand_width = (len(self.hand) * card_width) + ((len(self.hand) - 1) * card_spacing)
-                    if actual_hand_width > max_hand_width: 
-                         cards_in_row = min(len(self.hand), int((max_hand_width + card_spacing) / (card_width + card_spacing)))
-                         if cards_in_row == 0: cards_in_row = 1
-                         start_x = int(SCREEN_WIDTH * 0.03)
-                    else:
-                         start_x = (SCREEN_WIDTH - actual_hand_width) // 2
+                    max_hand_area_width = SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.05)
+                    if (card_width + card_spacing) > 0:
+                        cards_in_row = min(len(self.hand), int((max_hand_area_width + card_spacing) / (card_width + card_spacing)))
+                    if cards_in_row == 0: cards_in_row = 1
+                    
+                    total_cards_width_line = (cards_in_row * card_width) + ((cards_in_row - 1) * card_spacing)
+                    start_x = (max_hand_area_width - total_cards_width_line) // 2 + int(SCREEN_WIDTH * 0.03)
                     start_y = SCREEN_HEIGHT - card_height - int(SCREEN_HEIGHT * 0.03)
                     
                     for i, _ in enumerate(self.hand):
@@ -743,43 +781,59 @@ class GameClient:
                 
                 # Botão de submeter
                 if "submit" in self.buttons and self.buttons["submit"].collidepoint(pos):
-                    if self.selected_card_index != -1:
-                        self.submit_card()
-                        self.set_message("Carta submetida!", COLOR_SUCCESS)
+                    if not self.has_submitted_this_round: # Garante que só submeta uma vez
+                        if self.selected_card_index != -1:
+                            self.submit_card()
+                            self.set_message("Carta submetida!", COLOR_SUCCESS)
+                            self.has_submitted_this_round = True # Marca como submetida
+                        else:
+                            self.set_message("Selecione uma carta para submeter.", COLOR_ERROR)
                     else:
-                        self.set_message("Selecione uma carta para submeter.", COLOR_ERROR)
+                        self.set_message("Você já submeteu sua carta nesta rodada.", COLOR_ERROR)
             
             else:  # Fase de votação
                 # Clique nas cartas de votação
-                cards_in_row = 4
-                card_width = CARD_WIDTH_VOTE
-                card_height = CARD_HEIGHT_VOTE
-                card_spacing = CARD_MARGIN
-                start_x = (SCREEN_WIDTH - (cards_in_row * card_width + (cards_in_row - 1) * card_spacing)) // 2
-                start_y = int(SCREEN_HEIGHT * 0.35)
-                
-                for i, _ in enumerate(self.voting_cards):
-                    col = i % cards_in_row
-                    row = i // cards_in_row
-                    x = start_x + col * (card_width + card_spacing)
-                    y = start_y + row * (card_height + card_spacing)
+                if not self.has_voted_this_round and self.voting_cards: # Só permite selecionar se ainda não votou
+                    cards_in_row = 4
+                    card_width = CARD_WIDTH_VOTE
+                    card_height = CARD_HEIGHT_VOTE
+                    card_spacing = CARD_MARGIN
                     
-                    card_rect = pygame.Rect(x, y, card_width, card_height)
-                    if card_rect.collidepoint(pos):
-                        if self.selected_vote_index == i: # Deseleciona se clicar na mesma
-                            self.selected_vote_index = -1
-                        else:
-                            self.selected_vote_index = i
-                        self.vote_card_anim_scale = 1.0 # Reset para nova animação
-                        break
+                    max_vote_area_width = SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.05)
+                    if (card_width + card_spacing) > 0:
+                        cards_in_row = min(len(self.voting_cards), int((max_vote_area_width + card_spacing) / (card_width + card_spacing)))
+                    if cards_in_row == 0: cards_in_row = 1
+
+                    total_cards_width = (cards_in_row * card_width) + ((cards_in_row - 1) * card_spacing)
+                    start_x = (SCREEN_WIDTH - total_cards_width) // 2
+                    start_y = int(SCREEN_HEIGHT * 0.35)
+                    
+                    for i, _ in enumerate(self.voting_cards):
+                        col = i % cards_in_row
+                        row = i // cards_in_row
+                        x = start_x + col * (card_width + card_spacing)
+                        y = start_y + row * (card_height + card_spacing)
+                        
+                        card_rect = pygame.Rect(x, y, card_width, card_height)
+                        if card_rect.collidepoint(pos):
+                            if self.selected_vote_index == i: # Deseleciona se clicar na mesma
+                                self.selected_vote_index = -1
+                            else:
+                                self.selected_vote_index = i
+                            self.vote_card_anim_scale = 1.0 # Reset para nova animação
+                            break
                 
                 # Botão de votar
                 if "vote" in self.buttons and self.buttons["vote"].collidepoint(pos):
-                    if self.selected_vote_index != -1:
-                        self.vote_card()
-                        self.set_message("Voto enviado!", COLOR_SUCCESS)
+                    if not self.has_voted_this_round: # Garante que só vote uma vez
+                        if self.selected_vote_index != -1:
+                            self.vote_card()
+                            self.set_message("Voto enviado!", COLOR_SUCCESS)
+                            self.has_voted_this_round = True # Marca como votado
+                        else:
+                            self.set_message("Selecione uma carta para votar.", COLOR_ERROR)
                     else:
-                        self.set_message("Selecione uma carta para votar.", COLOR_ERROR)
+                        self.set_message("Você já votou nesta rodada.", COLOR_ERROR)
         
         elif self.game_state == "game_over":
             if "new_game" in self.buttons and self.buttons["new_game"].collidepoint(pos):
@@ -890,38 +944,53 @@ class GameClient:
                 self.set_message("Aguardando mais jogadores...", COLOR_TEXT_LIGHT)
             elif self.game_state == "in_game" and old_state != "in_game":
                 self.set_message("O jogo começou!", COLOR_SUCCESS)
+            elif self.game_state == "round_result" and old_state == "in_game":
+                # Limpa flags de submissão/voto para a próxima rodada
+                self.has_submitted_this_round = False
+                self.has_voted_this_round = False
+
 
         elif action == "nova_mao":
-            old_hand_coords = {} # Guardar as posições atuais das cartas na mão antes de atualizar
-            # Calcular as posições atuais para animar
+            # Guarda as posições ATUAIS das cartas ANTES de atualizar self.hand
+            old_hand_coords = {} 
             cards_in_row = 6
-            max_hand_width = SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.05)
-            actual_hand_width = (len(self.hand) * CARD_WIDTH_HAND) + ((len(self.hand) - 1) * CARD_MARGIN)
-            if actual_hand_width > max_hand_width: 
-                cards_in_row = min(len(self.hand), int((max_hand_width + CARD_MARGIN) / (CARD_WIDTH_HAND + CARD_MARGIN)))
-                if cards_in_row == 0: cards_in_row = 1
-                start_x = int(SCREEN_WIDTH * 0.03)
-            else:
-                start_x = (SCREEN_WIDTH - actual_hand_width) // 2
+            max_hand_area_width = SCREEN_WIDTH - self.scoreboard_width - int(SCREEN_WIDTH * 0.05)
+            if (CARD_WIDTH_HAND + CARD_MARGIN) > 0:
+                cards_in_row = min(len(self.hand), int((max_hand_area_width + CARD_MARGIN) / (CARD_WIDTH_HAND + CARD_MARGIN)))
+            if cards_in_row == 0: cards_in_row = 1
+            
+            total_cards_width_line = (cards_in_row * CARD_WIDTH_HAND) + ((cards_in_row - 1) * CARD_MARGIN)
+            start_x = (max_hand_area_width - total_cards_width_line) // 2 + int(SCREEN_WIDTH * 0.03)
             start_y = SCREEN_HEIGHT - CARD_HEIGHT_HAND - int(SCREEN_HEIGHT * 0.03)
 
             for i, card_text in enumerate(self.hand):
                 col = i % cards_in_row
                 row = i // cards_in_row
-                old_hand_coords[card_text] = (start_x + col * (CARD_WIDTH_HAND + CARD_MARGIN), 
-                                              start_y - row * (CARD_HEIGHT_HAND + CARD_MARGIN))
+                current_card_x = start_x + col * (CARD_WIDTH_HAND + CARD_MARGIN)
+                current_card_y = start_y - row * (CARD_HEIGHT_HAND + CARD_MARGIN)
+                old_hand_coords[card_text] = (current_card_x, current_card_y)
 
             new_hand_list = data.get("cartas", [])
             
-            # Inicializa animações para novas cartas ou cartas que mudaram de posição
+            # Inicializa animações para cartas que permanecem mas mudam de posição, ou novas cartas
             self.card_animations = []
-            for new_card in new_hand_list:
-                if new_card not in old_hand_coords: # É uma carta nova
-                    # Animação de surgir de fora da tela ou de um ponto central
+            for new_card_text in new_hand_list:
+                if new_card_text in old_hand_coords:
+                    # Carta que já estava na mão, mas pode mudar de posição
                     self.card_animations.append({
-                        "card": new_card,
+                        "card": new_card_text,
+                        "start_pos": old_hand_coords[new_card_text],
+                        "end_pos": (0,0), # Será atualizado na função draw_game_screen
+                        "current_pos": old_hand_coords[new_card_text], # Posição inicial para a animação
+                        "start_time": time.time(),
+                        "duration": 0.3 # Animação mais rápida
+                    })
+                else: # É uma carta nova, anima de baixo para cima
+                    self.card_animations.append({
+                        "card": new_card_text,
                         "start_pos": (SCREEN_WIDTH // 2, SCREEN_HEIGHT + CARD_HEIGHT_HAND), # Vem de baixo
-                        "end_pos": (0,0), # Será preenchido no draw_game_screen
+                        "end_pos": (0,0), # Será atualizado na função draw_game_screen
+                        "current_pos": (SCREEN_WIDTH // 2, SCREEN_HEIGHT + CARD_HEIGHT_HAND),
                         "start_time": time.time(),
                         "duration": 0.5
                     })
@@ -929,6 +998,7 @@ class GameClient:
             self.hand = new_hand_list
             self.selected_card_index = -1
             self.set_message("Você recebeu uma nova mão!", COLOR_TEXT_LIGHT)
+            self.has_submitted_this_round = False # Resetar para nova rodada
         
         elif action == "scores_update":
             self.scores = data.get("scores", {})
@@ -939,13 +1009,15 @@ class GameClient:
         
         elif action == "countdown":
             self.countdown = data.get("seconds", 0)
-            self.set_message(f"Jogo começando em {self.countdown} segundos!", COLOR_SELECTION)
+            self.set_message(f"Jogo começando em: {self.countdown}", COLOR_SELECTION)
         
         elif action == "black_card":
             self.current_black_card = data.get("card", "")
             self.submitted_count = 0 
             self.voting_cards = [] 
             self.selected_vote_index = -1
+            self.has_submitted_this_round = False # Garante que pode submeter na nova rodada
+            self.has_voted_this_round = False # Garante que pode votar na nova rodada
             self.set_message("Nova carta preta! Escolha sua melhor resposta.", COLOR_TEXT_LIGHT)
         
         elif action == "white_card_submitted":
@@ -957,6 +1029,7 @@ class GameClient:
             self.selected_vote_index = -1
             self.game_state = "in_game" # Para usar a tela de jogo, mas com voting_cards
             self.set_message("Hora de votar!", COLOR_SELECTION)
+            self.has_voted_this_round = False # Garante que pode votar na rodada de votação
         
         elif action == "round_result":
             self.round_result = {
@@ -965,6 +1038,7 @@ class GameClient:
             }
             self.game_state = "round_result"
             self.set_message(f"Vencedor da rodada: {self.round_result['winner_address']}!", COLOR_SUCCESS)
+            # As flags de submissão/voto serão resetadas com a chegada da "nova_mao" ou "black_card"
         
         elif action == "game_over":
             self.round_result = {
@@ -973,12 +1047,16 @@ class GameClient:
             }
             self.game_state = "game_over"
             self.set_message(f"Fim de Jogo! Vencedor: {self.round_result['winner']}.", COLOR_ERROR)
+            self.has_submitted_this_round = False # Resetar para nova partida
+            self.has_voted_this_round = False # Resetar para nova partida
         
         elif action == "next_round":
             self.voting_cards = []
             self.selected_card_index = -1
             self.selected_vote_index = -1
             self.submitted_count = 0
+            self.has_submitted_this_round = False # Resetar para a próxima rodada
+            self.has_voted_this_round = False # Resetar para a próxima rodada
             # O estado será ajustado quando a nova black_card chegar ou game_state_update
         
         elif action == "get_nome": # Bugfix que você mencionou
@@ -1011,13 +1089,11 @@ class GameClient:
                 except Exception as e:
                     print(f"Erro ao enviar submit_white_card: {e}")
             
+            # Correção: Passar self.websocket_loop para run_coroutine_threadsafe
             asyncio.run_coroutine_threadsafe(send_submit(), self.websocket_loop)
-            # A carta é removida da mão pelo servidor.
-            # No cliente, podemos remover imediatamente para feedback visual,
-            # mas o servidor vai enviar a mão atualizada de qualquer forma.
-            # self.hand.pop(self.selected_card_index) 
             self.selected_card_index = -1 # Limpa a seleção após submeter
-    
+            self.has_submitted_this_round = True # Garante que não submeta novamente
+
     def vote_card(self):
         """Vota na carta selecionada."""
         if (self.selected_vote_index != -1 and 
@@ -1037,8 +1113,10 @@ class GameClient:
                 except Exception as e:
                     print(f"Erro ao enviar vote: {e}")
             
+            # Correção: Passar self.websocket_loop para run_coroutine_threadsafe
             asyncio.run_coroutine_threadsafe(send_vote(), self.websocket_loop)
             self.selected_vote_index = -1 # Limpa a seleção após votar
+            self.has_voted_this_round = True # Garante que não vote novamente
     
     def restart_game(self):
         """Reinicia o estado local do cliente para uma nova partida."""
@@ -1046,18 +1124,21 @@ class GameClient:
         if self.websocket and self.websocket_loop:
             # Precisa ser agendado no loop do WebSocket se a thread ainda estiver viva
             try:
-                future = asyncio.run_coroutine_threadsafe(self.websocket.close(), self.websocket_loop)
-                future.result(timeout=1.0) # Espera um pouco para fechar
+                # Cria uma Future para o fechamento do websocket
+                close_task = asyncio.run_coroutine_threadsafe(self.websocket.close(), self.websocket_loop)
+                # Espera pelo resultado da Future com um timeout
+                close_task.result(timeout=1.0)
+            except asyncio.TimeoutError:
+                print("Timeout ao tentar fechar WebSocket na reinicialização.")
             except Exception as e:
                 print(f"Erro ao tentar fechar WebSocket na reinicialização: {e}")
             finally:
                 self.websocket = None
-                self.websocket_loop = None
-                if self.ws_thread and self.ws_thread.is_alive():
-                    # Não há um bom jeito de "matar" uma thread em Python
-                    # O daemon=True faz com que ela termine com o programa principal.
-                    pass 
-                self.ws_thread = None # Garante que uma nova thread será criada
+                self.websocket_loop = None # Garante que um novo loop seja criado
+                # Não há um bom jeito de "matar" uma thread em Python.
+                # O daemon=True faz com que ela termine com o programa principal.
+                # Se ws_thread ainda estiver ativa, ela eventualmente vai terminar.
+                self.ws_thread = None 
 
         # Reinicia o estado do jogo
         self.game_state = "disconnected" # Volta para a tela de conexão/entrada de sala
@@ -1075,6 +1156,9 @@ class GameClient:
         self.input_text = ""
         self.input_active = True # Ativa o input de nome
         self.input_type = "name" # Reinicia o fluxo de nome/sala
+        self.has_submitted_this_round = False # Reset flags
+        self.has_voted_this_round = False # Reset flags
+        self.card_animations = [] # Limpa animações pendentes
         self.set_message("Bem-vindo! Digite seu nome para começar.", COLOR_TEXT_LIGHT)
 
 
@@ -1107,6 +1191,8 @@ class GameClient:
                 # Tenta fechar o WebSocket de forma assíncrona na thread do WebSocket
                 future = asyncio.run_coroutine_threadsafe(self.websocket.close(), self.websocket_loop)
                 future.result(timeout=1.0) # Espera um pouco para garantir o fechamento
+            except asyncio.TimeoutError:
+                print("Timeout ao tentar fechar WebSocket no cleanup.")
             except Exception as e:
                 print(f"Erro no cleanup ao fechar WebSocket: {e}")
         

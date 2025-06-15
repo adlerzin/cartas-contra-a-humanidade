@@ -35,8 +35,8 @@ Um jogo de cartas multiplayer em tempo real, inspirado no popular "Cards Against
 ### 1️⃣ Clonar o Repositório
 
 ```bash
-git clone <URL_DO_SEU_REPOSITORIO>
-cd cartas-contra-humanidade-online
+git clone https://github.com/adlerzin/cartas-contra-a-humanidade
+cd cartas-contra-humanidade
 ```
 
 ---
