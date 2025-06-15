@@ -6,6 +6,7 @@ import time
 from cartas import white_cards 
 from cartas import black_cards
 import os
+import traceback
 # import random # Removido import duplicado
 
 # --- Server State ---
@@ -17,8 +18,8 @@ players = {}
 current_black_card = None
 submitted_white_cards = [] # [{"player": websocket, "card": card_text}]
 votes = {} # {card_text: count}
-max_points = 5
-min_players = 3 # Mínimo de jogadores para iniciar
+max_points = 2
+min_players = 2 # Mínimo de jogadores para iniciar
 HAND_SIZE = 7 # Tamanho da mão de cartas brancas de cada jogador
 
 # Game state

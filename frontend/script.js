@@ -7,7 +7,7 @@ const sala = params.get("sala")
 console.log(nome) // "adler"
 console.log(sala) // "8000"
 
-const WS_URL = `wss://talented-clam-true.ngrok-free.app` // Replace with server IP if not local
+const WS_URL = `ws://localhost:10000` // Replace with server IP if not local
 
 // --- DOM Elements ---
 const statusMessage = document.getElementById("status-message")
