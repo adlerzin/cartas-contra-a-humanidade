@@ -166,6 +166,7 @@ async def start_new_round():
                 nova_carta = random.choice(white_cards)
                 players[player_ws]["hand"].append(nova_carta)
                 await send_to_client(player_ws, {"action": "nova_mao", "cartas": players[player_ws]["hand"]})
+                 # to escrevendo isso aqui pra dar uma enrolada haha atumalaca rsrs
 
              else:
                  # Tratar caso não haja cartas brancas suficientes para dar uma mão
